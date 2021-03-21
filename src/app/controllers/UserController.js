@@ -1,68 +1,33 @@
-const User = require("../models/UserModel");
+const UserModel = require("../models/UserModel");
+const authMiddleware = require('../helper/middle-ware-auth')
+const jsonRes = require('../helper/json-response')
 // const {multipleMongooseToObject, mongooseToObject} = require('../../utils/mangoose')
 class UserController {
-  // [POST] /users/sign-up
-  signUp(req, res, next) {
-    User.findOne({ username: req.body.username })
-      .then(dataUsername => {
-        if (dataUsername) {
-          const response = {
-            code: 409,
-            data: null,
-            success: false,
-            message: {
-              vi: 'Tài khoản đã tồn tại!',
-              en: 'Username already exists!'
-            }
-          }
-          res.status(409)
-          res.json(response)
-        }
-        else {
-          User.findOne({ email: req.body.email })
-            .then(dataEmail => {
-              if (dataEmail) {
-                const response = {
-                  code: 409,
-                  data: null,
-                  success: false,
-                  message: {
-                    vi: 'Email đã tồn tại!',
-                    en: 'Email already exists!'
-                  }
-                }
-                res.status(409)
-                res.json(response)
-              }
-              else {
-                const user = new User(req.body)
-                user.save()
-                  .then(() => {
-                    const response = {
-                      code: 201,
-                      data: {
-                        userInfo: user
-                      },
-                      success: true
-                    }
-                    res.status(201)
-                    res.json(response)
-                  })
-                  .catch((e) => {
-                    const response = {
-                      code: 400,
-                      data: null,
-                      success: false,
-                      message: e.message
-                    }
-                    res.status(400)
-                    res.json(response)
-                })
-              }
-          })
-        }
+  // [GET] /users
+  async showList(req, res, next) {
+    await authMiddleware.isAuth(req, res, next).then(user => {
+      const page = parseInt(req.query.page) || 1
+      const size = parseInt(req.query.size) || 10
+      const start = (page - 1) * size
+      const end = page * size
+      UserModel.find()
+        .then(users => {
+          return res.status(200).json(jsonRes.success(
+            200,
+            {
+              items: users.slice(start, end),
+              page,
+              size,
+              totalItems: users.length
+            },
+            "GET_DATA_SUCCESS"
+          ))
+        })
+        .catch(e => {
+        return res.status(400).json(jsonRes.error(400, e.message))
       })
-      .catch(next)
+    })
+    .catch(next)
   }
   // [GET] /
   // index(req, res, next) {

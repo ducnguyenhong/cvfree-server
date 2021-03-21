@@ -4,7 +4,7 @@ const port = require('./constants').serverPort
 const morgan = require('morgan');
 const path = require('path');
 const route = require('./routes');
-const db = require('./configs/db')
+const db = require('./database')
 const bodyParser = require('body-parser')
 const cors = require('cors')
 

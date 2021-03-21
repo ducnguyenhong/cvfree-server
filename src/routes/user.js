@@ -3,7 +3,7 @@ const router = express.Router();
 const userController = require('../app/controllers/UserController');
 
 
-
+router.get('/', userController.showList);
 // const upload = multer({dest: './src/public/uploads/'})
 
 // router.post('/upload',upload.single('avatar'), courseController.upload);
@@ -12,7 +12,7 @@ const userController = require('../app/controllers/UserController');
 // router.get('/:id/edit', courseController.showEdit);
 // router.put('/:id', courseController.update);
 // router.get('/:slug', courseController.show);
-router.post('/sign-up', userController.signUp);
+// router.post('/sign-up', userController.signUp);
 
 
 module.exports = router;
