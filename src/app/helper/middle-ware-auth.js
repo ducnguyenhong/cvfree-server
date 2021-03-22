@@ -4,7 +4,8 @@ const verifyToken = require('../helper/verify-token')
 const jsonRes = require('../helper/json-response')
 
 const isAuth = async (req, res, next) => {
-  const accessTokenFromHeader = req.headers.accesstoken;
+  const bearerToken = req.headers.authorization;
+  const accessTokenFromHeader = bearerToken.split(' ')[1]
 	if (!accessTokenFromHeader) {
 		return res.status(401).json(jsonRes.error(401, "UNAUTHORIZED"))
 	}

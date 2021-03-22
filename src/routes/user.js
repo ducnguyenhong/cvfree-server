@@ -4,6 +4,7 @@ const userController = require('../app/controllers/UserController');
 
 
 router.get('/', userController.showList);
+router.get('/:id', userController.showDetail);
 // const upload = multer({dest: './src/public/uploads/'})
 
 // router.post('/upload',upload.single('avatar'), courseController.upload);

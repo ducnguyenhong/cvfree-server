@@ -10,16 +10,48 @@ class UserController {
       const size = parseInt(req.query.size) || 10
       const start = (page - 1) * size
       const end = page * size
+      
       UserModel.find()
         .then(users => {
+          let totalPages = 0;
+          if (users.length <= size) {
+            totalPages = 1
+          }
+          if (users.length > size) {
+            totalPages = (users.length % size === 0) ? (users.length / size) : Math.ceil(users.length / size) + 1
+          }
+          const dataRes = users.slice(start, end).map(item => {
+            const { password, _id, __v, ...userRes } = item._doc
+            return userRes
+          })
           return res.status(200).json(jsonRes.success(
             200,
             {
-              items: users.slice(start, end),
+              items: dataRes,
               page,
               size,
-              totalItems: users.length
+              totalItems: users.length,
+              totalPages
             },
+            "GET_DATA_SUCCESS"
+          ))
+        })
+        .catch(e => {
+        return res.status(400).json(jsonRes.error(400, e.message))
+      })
+    })
+    .catch(next)
+  }
+
+  async showDetail(req, res, next) {
+    await authMiddleware.isAuth(req, res, next).then(user => {
+      const userId = req.params.id
+      UserModel.findOne({id: userId})
+        .then(userDetail => {
+          const { password, _id, __v, ...dataRes } = userDetail._doc
+          return res.status(200).json(jsonRes.success(
+            200,
+            { userDetail: dataRes },
             "GET_DATA_SUCCESS"
           ))
         })

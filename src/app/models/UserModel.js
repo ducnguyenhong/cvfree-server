@@ -1,4 +1,5 @@
 const mongoose = require('mongoose')
+const autoIncrement = require('mongoose-auto-increment')
 
 const Schema = mongoose.Schema
 
@@ -17,7 +18,17 @@ const User = new Schema({
   phone: { type: String, maxlength: 20 },
   status: { type: String, maxlength: 10 },
   type: { type: String, maxlength: 15, required: true },
-  avatar: {type: String, maxlength: 255}
-}, {timestamps: true}) // auto generate createdAt, updatedAt
+  avatar: { type: String, maxlength: 255 },
+  seeCV: { type: Boolean },
+  findJob: { type: Boolean },
+  typeAccount: {type: String, maxlength: 20}
+}, { timestamps: true }) // auto generate createdAt, updatedAt
+
+autoIncrement.initialize(mongoose.connection);
+
+User.plugin(autoIncrement.plugin, {
+  model: 'User',
+  field: 'id'
+});
 
 module.exports = mongoose.model('User', User)

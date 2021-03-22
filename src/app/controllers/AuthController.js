@@ -6,6 +6,7 @@ const CONSTANTS = require('../../constants')
 const generateToken = require('../helper/generate-token')
 const moment = require('moment')
 
+
 class AuthController {
 
   // [POST] /auth/sign-in

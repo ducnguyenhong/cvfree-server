@@ -1,6 +1,6 @@
 {
   "name": "cv-free-server",
-  "version": "1.0.0",
+  "version": "210323.0110",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -16,6 +16,7 @@
     "jsonwebtoken": "^8.5.1",
     "moment": "^2.29.1",
     "mongoose": "^5.11.9",
+    "mongoose-auto-increment": "^5.0.1",
     "morgan": "^1.10.0",
     "multer": "^1.4.2",
     "nodemon": "^2.0.7",
