@@ -1,6 +1,6 @@
 {
   "name": "cv-free-server",
-  "version": "210323.0110",
+  "version": "1.0.1",
   "description": "",
   "main": "index.js",
   "scripts": {
