@@ -19,7 +19,8 @@ const Cv = new Schema({
   detail: {
     type: {
       fullname: {type: String, required: true},
-      avatar: {type: String},
+      avatar: { type: String },
+      status: {type: String},
       applyPosition: { type: String },
       birthday: { type: String },
       gender: {type: String},
