@@ -22,10 +22,16 @@ const Cv = new Schema({
       avatar: { type: String },
       status: {type: String},
       applyPosition: { type: String },
-      birthday: { type: String },
+      birthday: { type: Number },
       gender: {type: String},
       phone: {type: String},
-      address: {type: String},
+      address: {
+        value: {
+          city: { type: String },
+          district: {type: String}
+        },
+        label: String
+      },
       email: {type: String},
       facebook: { type: String },
       hobby: { type: String },

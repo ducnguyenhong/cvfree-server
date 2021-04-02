@@ -3,9 +3,9 @@ const mongoose = require('mongoose')
 const Schema = mongoose.Schema
 
 const Location = new Schema({
-  id: String,
-  code: String,
-  name: String,
+  id: {type: String},
+  code: {type: String},
+  name: {type: String},
   districts: Array
 }, { timestamps: false })
 

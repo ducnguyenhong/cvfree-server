@@ -46,7 +46,7 @@ class CvController {
     const start = (page - 1) * size
     const end = page * size
     const userId = req.userRequest._doc.id
-    
+
     CvModel.find({userId, status: 'ACTIVE'}).exec()
       .then(cvs => {
         let totalPages = 0;
