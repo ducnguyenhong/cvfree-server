@@ -10,7 +10,9 @@ const User = new Schema({
   email: { type: String, maxlength: 30, required: true },
   address: { type: String, maxlength: 255 },
   birthday: { type: Number },
+  verify: {type: Boolean},
   coin: { type: Number },
+  companyId: { type: Number },
   country: { type: String, maxlength: 255 },
   fullname: { type: String, maxlength: 255 },
   gender: { type: String, maxlength: 6 },
@@ -21,7 +23,9 @@ const User = new Schema({
   avatar: { type: String, maxlength: 255 },
   seeCV: { type: Boolean },
   findJob: { type: Boolean },
-  typeAccount: {type: String, maxlength: 20}
+  typeAccount: { type: String, maxlength: 20 },
+  numberOfPosting: { type: Number },
+  numberOfCandidateOpening: {type: Number}
 }, { timestamps: true }) // auto generate createdAt, updatedAt
 
 autoIncrement.initialize(mongoose.connection);

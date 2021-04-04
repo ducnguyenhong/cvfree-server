@@ -9,7 +9,12 @@ const Cv = new Schema({
   template: { type: String, maxlength: 20, required: true },
   fontSize: { type: String, maxlength: 10, required: true },
   fontFamily: { type: String, maxlength: 50, required: true },
+  isPrimary: {type: Boolean},
   name: { type: String },
+  career: {
+    value: { type: String },
+    label: {type: String}
+  },
   categoryInfo: [{
     name: { type: String }
   }],
@@ -20,6 +25,7 @@ const Cv = new Schema({
     type: {
       fullname: {type: String, required: true},
       avatar: { type: String },
+      candidateId: { type: String },
       status: {type: String},
       applyPosition: { type: String },
       birthday: { type: Number },
