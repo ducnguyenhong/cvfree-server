@@ -8,6 +8,7 @@ class CandidateController {
     const size = parseInt(req.query.size) || 10
     const start = (page - 1) * size
     const end = page * size
+    const userId = req.userRequest._doc.id
   
     CvModel.find().sort({ updatedAt: -1 })
       .then(cvs => {
@@ -22,7 +23,7 @@ class CandidateController {
         const cvsSlice = cvs.slice(start, end)
         let dataRes = []
         for (let i = 0; i < cvsSlice.length; i++) {
-          const { candidateId, detail, isPrimary, career, updatedAt } = cvsSlice[i]._doc
+          const { candidateId, detail, isPrimary, career, updatedAt, _id, unlockedEmployers } = cvsSlice[i]._doc
           if (isPrimary) {
             const { fullname, birthday, address, workExperience, gender, applyPosition, avatar } = detail
             dataRes.push({
@@ -35,7 +36,8 @@ class CandidateController {
               applyPosition,
               address: address.label,
               workExperience: !!(workExperience && workExperience.length > 0),
-              updatedAt
+              updatedAt,
+              cvId: unlockedEmployers && [...unlockedEmployers].includes(userId) ? _id : ''
             })
           }
         }
@@ -59,14 +61,15 @@ class CandidateController {
   // [GET] /candidate/:id
   async showCandidateDetail(req, res, next) {
     const candidateId = req.params.id
+    const userId = req.userRequest._doc.id
   
     CvModel.findOne({candidateId})
       .then(cvDetail => {
         if (!cvDetail) {
           return res.status(400).json(jsonRes.error(400, 'NOT_EXISTS_CANDIDATE'))
         }
-        const { candidateId, detail, career, updatedAt } = cvDetail._doc
-        const { fullname, birthday, address, workExperience, gender, applyPosition, avatar, education, advancedSkill, activity, certificate, award } = detail
+        const { candidateId, detail, career, updatedAt, unlockedEmployers, _id } = cvDetail._doc
+        const { fullname, birthday, address, workExperience, gender, applyPosition, avatar, careerGoals, education, advancedSkill, activity, certificate, award } = detail
         const dataRes = {
           avatar,
           career: career.label,
@@ -79,10 +82,12 @@ class CandidateController {
           award,
           advancedSkill,
           gender,
+          careerGoals,
           certificate,
           applyPosition,
           address: address.label,
-          updatedAt
+          updatedAt,
+          cvId: unlockedEmployers && [...unlockedEmployers].includes(userId) ? _id : ''
         }
 
         return res.status(200).json(jsonRes.success(

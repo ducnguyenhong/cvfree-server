@@ -11,6 +11,7 @@ const Cv = new Schema({
   fontFamily: { type: String, maxlength: 50, required: true },
   isPrimary: {type: Boolean},
   name: { type: String },
+  unlockedEmployers: [{type: Number}],
   career: {
     value: { type: String },
     label: {type: String}

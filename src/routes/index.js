@@ -4,10 +4,12 @@ const mediaRouter = require('./media')
 const candidateRouter = require('./candidate')
 const locationRouter = require('./location')
 const cvRouter = require('./cv')
+const employerController = require('./employer')
 const apiVersion = require('../constants/index').apiVersion
 
 const route = (app) => {
   app.use(`/${apiVersion}/users`, userRouter);
+  app.use(`/${apiVersion}/employer`, employerController);
   app.use(`/${apiVersion}/candidate`, candidateRouter);
   app.use(`/${apiVersion}/cvs`, cvRouter);
   app.use(`/${apiVersion}/locations`, locationRouter);
