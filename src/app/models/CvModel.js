@@ -87,7 +87,7 @@ const Cv = new Schema({
 autoIncrement.initialize(mongoose.connection);
 
 Cv.plugin(autoIncrement.plugin, {
-  model: 'cv',
+  model: 'Cv',
   field: 'id'
 });
 
