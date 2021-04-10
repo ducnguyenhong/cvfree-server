@@ -25,6 +25,7 @@ const Job = new Schema({
   jobDescription: String,
   requirementForCandidate: String,
   benefitToEnjoy: String,
+  candidateApplied: [{type: String}],
   status: String
 }, { timestamps: true }) // auto generate createdAt, updatedAt
 
