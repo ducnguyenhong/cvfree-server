@@ -58,6 +58,67 @@ class CandidateController {
       })
   }
 
+  // [GET] /candidate/informations
+  async showListCandidateInfos(req, res, next) {
+    const page = parseInt(req.query.page) || 1
+    const size = parseInt(req.query.size) || 10
+    const userId = req.userRequest._doc.id
+
+    const queryCandidate = async (userId) => {
+      let dataRes = []
+      for (let i = 0; i <= listCandidate.length; i++) {
+        await CvModel.findOne({ _id: listCandidate[i] })
+          .then(candidate => {
+            if (candidate) {
+              const { detail, _id, unlockedEmployers } = candidate._doc
+              const { fullname, gender, avatar } = detail
+  
+              dataRes.push({
+                avatar,
+                fullname,
+                gender,
+                cvId: unlockedEmployers && [...unlockedEmployers].includes(userId) ? _id : ''
+              })
+            }
+          })
+          .catch(e => {
+            return res.status(400).json(jsonRes.error(400, e.message))
+          })
+      }
+      return dataRes
+    }
+
+    // const { listCandidate } = req.body
+    let listCandidate = null
+    const {ids} = req.params
+    if (ids) {
+      listCandidate = ids.split(',')
+    }
+
+    console.log('ducnh5', listCandidate);
+    
+    if (!listCandidate || listCandidate.length === 0) {
+      return res.status(400).json(jsonRes.error(400, 'REQUIRED_LIST_CANDIDATE'))
+    }
+
+    let dataRes = await queryCandidate(userId)
+    
+
+    console.log('ducnh7', dataRes);
+
+    return res.status(200).json(jsonRes.success(
+      200,
+      {
+        items: dataRes,
+        page,
+        size,
+        totalItems: dataRes.length,
+        totalPages: 1
+      },
+      "GET_DATA_SUCCESS"
+    ))
+  }
+
   // [GET] /candidate/:id
   async showCandidateDetail(req, res, next) {
     const candidateId = req.params.id

@@ -3,7 +3,8 @@ const router = express.Router();
 const candidateController = require('../app/controllers/CandidateController');
 const authMDW = require('../app/helper/middle-ware-auth')
 
-router.get('/', authMDW, candidateController.showListCandidate);
+router.get('/informations=:ids', authMDW, candidateController.showListCandidateInfos);
 router.get('/:id', authMDW, candidateController.showCandidateDetail);
+router.get('/', authMDW, candidateController.showListCandidate);
 
 module.exports = router;
