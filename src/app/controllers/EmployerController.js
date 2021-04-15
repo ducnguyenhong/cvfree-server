@@ -1,6 +1,8 @@
 const CvModel = require("../models/CvModel");
 const jsonRes = require('../helper/json-response')
 const UserModel = require('../models/UserModel.js')
+const JobModel = require('../models/JobModel')
+const CandidateManageModel = require('../models/CandidateManageModel')
 
 class EmployerController {
 
@@ -109,6 +111,84 @@ class EmployerController {
       .catch(e => {
       return res.status(400).json(jsonRes.error(400, e.message))
     })
+  }
+
+  // [POST] /employer/accept-candidate
+  async acceptCandidate(req, res, next) {
+    const employer = req.userRequest._doc
+    if (!employer) {
+      return res.status(400).json(jsonRes.error(400, 'NOT_EXISTS_EMPLOYER'))
+    }
+    const { jobId, cvId } = req.body
+    CvModel.findOne({ _id: cvId })
+      .then(cv => {
+        if (!cv) {
+          return res.status(400).json(jsonRes.error(400, 'NOT_EXISTS_CANDIDATE'))
+        }
+        JobModel.findOne({ _id: jobId })
+        .then(job => {
+          if (!job) {
+            return res.status(400).json(jsonRes.error(400, 'NOT_EXISTS_JOB'))
+          }
+          const { candidateApplied } = job._doc
+          let newCandidateApplied = [...candidateApplied]
+          newCandidateApplied = newCandidateApplied.filter(item => item.cvId !== cvId)
+          CandidateManageModel.findOne({ employerId: employer._id })
+            .then(candidateManage => {
+              const newData = {
+                cvId,
+                candidateFullname: cv._doc.detail.fullname,
+                jobId,
+                jobName: job._doc.name,
+                isDone: false
+              }
+
+              if (!candidateManage) {
+                const newCandidateManage = new CandidateManageModel({
+                  employerId: employer._id,
+                  candidates: [newData]
+                })
+                newCandidateManage.save()
+                  .then(() => {
+                    JobModel.findOneAndUpdate({ _id: jobId }, { candidateApplied: newCandidateApplied })
+                      .then(() => res.status(200).json(jsonRes.success( 200, undefined, "ACCEPT_CANDIDATE_SUCCESS" )))
+                      .catch(e => res.status(400).json(jsonRes.error(400, e.message)))
+                  })
+                  .catch(e => res.status(400).json(jsonRes.error(400, e.message)))
+              }
+              else {
+                const { candidates } = candidateManage._doc
+                CandidateManageModel.findOneAndUpdate({ employerId: employer._id }, { candidates: [...candidates, newData] })
+              }
+              })
+            .catch(e => res.status(400).json(jsonRes.error(400, e.message)))
+          
+        })
+        .catch(e => res.status(400).json(jsonRes.error(400, e.message)))
+      })
+      .catch(e => res.status(400).json(jsonRes.error(400, e.message)))
+  }
+
+  // [POST] /employer/reject-candidate
+  async rejectCandidate(req, res, next) {
+    const employer = req.userRequest._doc
+    if (!employer) {
+      return res.status(400).json(jsonRes.error(400, 'NOT_EXISTS_EMPLOYER'))
+    }
+    const { jobId, cvId } = req.body
+    JobModel.findOne({ _id: jobId })
+      .then(job => {
+        if (!job) {
+          return res.status(400).json(jsonRes.error(400, 'NOT_EXISTS_JOB'))
+        }
+        const { candidateApplied } = job._doc
+        let newCandidateApplied = [...candidateApplied]
+        newCandidateApplied = newCandidateApplied.filter(item => item.cvId !== cvId)
+        JobModel.findOneAndUpdate({ _id: jobId }, { candidateApplied: newCandidateApplied })
+          .then(() => res.status(200).json(jsonRes.success( 200, undefined, "REJECT_CANDIDATE_SUCCESS" )))
+          .catch(e => res.status(400).json(jsonRes.error(400, e.message)))
+      })
+      .catch(e => res.status(400).json(jsonRes.error(400, e.message)))
   }
 }
 

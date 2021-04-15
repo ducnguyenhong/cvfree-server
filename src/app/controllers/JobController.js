@@ -26,8 +26,10 @@ class JobController {
           totalPages = (jobs.length % size === 0) ? (jobs.length / size) : Math.ceil(jobs.length / size) + 1
         }
         const dataRes = jobs.slice(start, end).map(item => {
-          const { ...jobsRes } = item._doc
-          return jobsRes
+          const { candidateApplied, ...jobsRes } = item._doc
+          let newCandidateApplied = [...candidateApplied]
+          newCandidateApplied = newCandidateApplied.filter(item => item.accept === false)
+          return {...jobsRes, candidateApplied: newCandidateApplied}
         })
         return res.status(200).json(jsonRes.success(
           200,
@@ -173,7 +175,7 @@ class JobController {
 
         const { candidateApplied, creatorId, name } = jobDetail._doc
 
-        JobModel.findOneAndUpdate({ _id: jobId }, { candidateApplied: [...candidateApplied, cvId] })
+        JobModel.findOneAndUpdate({ _id: jobId }, { candidateApplied: [...candidateApplied, {cvId, accept: false}] })
           .then(() => {
             UserModel.findOne({ id: creatorId })
               .then(creator => {

@@ -1,9 +1,66 @@
 const CvModel = require("../models/CvModel");
+const JobModel = require('../models/JobModel')
 const jsonRes = require('../helper/json-response')
 
 class CandidateController {
   // [GET] /candidate
   async showListCandidate(req, res, next) {
+    const page = parseInt(req.query.page) || 1
+    const size = parseInt(req.query.size) || 10
+    const start = (page - 1) * size
+    const end = page * size
+    const userId = req.userRequest._doc.id
+  
+    CvModel.find().sort({ updatedAt: -1 })
+      .then(cvs => {
+        let totalPages = 0;
+        if (cvs.length <= size) {
+          totalPages = 1
+        }
+        if (cvs.length > size) {
+          totalPages = (cvs.length % size === 0) ? (cvs.length / size) : Math.ceil(cvs.length / size) + 1
+        }
+        // const randomCvs = cvs.sort(() => Math.random() - Math.random()).slice(0, 50)
+        const cvsSlice = cvs.slice(start, end)
+        let dataRes = []
+        for (let i = 0; i < cvsSlice.length; i++) {
+          const { candidateId, detail, isPrimary, career, updatedAt, _id, unlockedEmployers } = cvsSlice[i]._doc
+          if (isPrimary) {
+            const { fullname, birthday, address, workExperience, gender, applyPosition, avatar } = detail
+            dataRes.push({
+              avatar,
+              career: career.label,
+              candidateId,
+              fullname,
+              birthday,
+              gender,
+              applyPosition,
+              address: address.label,
+              workExperience: !!(workExperience && workExperience.length > 0),
+              updatedAt,
+              cvId: unlockedEmployers && [...unlockedEmployers].includes(userId) ? _id : ''
+            })
+          }
+        }
+        return res.status(200).json(jsonRes.success(
+          200,
+          {
+            items: dataRes,
+            page,
+            size,
+            totalItems: cvs.length,
+            totalPages
+          },
+          "GET_DATA_SUCCESS"
+        ))
+      })
+      .catch(e => {
+        return res.status(400).json(jsonRes.error(400, e.message))
+      })
+  }
+
+  // [GET] /candidate/manage
+  async showListCandidateManage(req, res, next) {
     const page = parseInt(req.query.page) || 1
     const size = parseInt(req.query.size) || 10
     const start = (page - 1) * size
@@ -64,20 +121,20 @@ class CandidateController {
     const size = parseInt(req.query.size) || 10
     const userId = req.userRequest._doc.id
 
-    const queryCandidate = async (userId) => {
+    const queryCandidate = async () => {
       let dataRes = []
       for (let i = 0; i <= listCandidate.length; i++) {
         await CvModel.findOne({ _id: listCandidate[i] })
           .then(candidate => {
             if (candidate) {
-              const { detail, _id, unlockedEmployers } = candidate._doc
+              const { detail, _id } = candidate._doc
               const { fullname, gender, avatar } = detail
   
               dataRes.push({
                 avatar,
                 fullname,
                 gender,
-                cvId: unlockedEmployers && [...unlockedEmployers].includes(userId) ? _id : ''
+                cvId: _id
               })
             }
           })
@@ -88,20 +145,37 @@ class CandidateController {
       return dataRes
     }
 
-    // const { listCandidate } = req.body
+    const checkJobCreator = async (jobId) => {
+      let check = false
+      await JobModel.findOne({ _id: jobId })
+        .then(job => {
+          if (job && job._doc.creatorId === userId) {
+            check = true
+          }
+        })
+        .catch(e => {
+          return res.status(400).json(jsonRes.error(400, e.message))
+        })
+      return check
+    }
+
     let listCandidate = null
-    const {ids} = req.params
+    const {ids, jobId} = req.params
     if (ids) {
       listCandidate = ids.split(',')
     }
-
-    console.log('ducnh5', listCandidate);
     
     if (!listCandidate || listCandidate.length === 0) {
       return res.status(400).json(jsonRes.error(400, 'REQUIRED_LIST_CANDIDATE'))
     }
 
-    let dataRes = await queryCandidate(userId)
+    const checkCreator = await checkJobCreator(jobId)
+
+    if (!checkCreator) {
+      return res.status(400).json(jsonRes.error(400, 'USER_REQUEST_IS_NOT_JOB_CREATOR'))
+    }
+
+    let dataRes = await queryCandidate()
     
 
     console.log('ducnh7', dataRes);

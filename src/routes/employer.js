@@ -4,6 +4,8 @@ const employerController = require('../app/controllers/EmployerController');
 const authMDW = require('../app/helper/middle-ware-auth')
 
 router.post('/unlock-candidate', authMDW, employerController.unlockCandiddate);
+router.post('/accept-candidate', authMDW, employerController.acceptCandidate);
+router.post('/reject-candidate', authMDW, employerController.rejectCandidate);
 router.get('/info', authMDW, employerController.showEmployerInfo);
 router.get('/:id', authMDW, employerController.showEmployerDetail);
 

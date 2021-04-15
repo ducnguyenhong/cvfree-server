@@ -84,6 +84,7 @@ const Cv = new Schema({
       }],
     }
   },
+  status: {type: String}
 }, { timestamps: true }) // auto generate createdAt, updatedAt
 
 autoIncrement.initialize(mongoose.connection);
