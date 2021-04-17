@@ -3,6 +3,7 @@ const authRouter = require('./auth')
 const mediaRouter = require('./media')
 const candidateRouter = require('./candidate')
 const candidateManageRouter = require('./candidate-manage')
+const applyManageRouter = require('./apply-manage')
 const locationRouter = require('./location')
 const cvRouter = require('./cv')
 const employerRouter = require('./employer')
@@ -14,6 +15,7 @@ const route = (app) => {
   app.use(`/${apiVersion}/users`, userRouter);
   app.use(`/${apiVersion}/employer`, employerRouter);
   app.use(`/${apiVersion}/candidate-manage`, candidateManageRouter);
+  app.use(`/${apiVersion}/apply-manage`, applyManageRouter);
   app.use(`/${apiVersion}/candidate`, candidateRouter);
   app.use(`/${apiVersion}/cvs`, cvRouter);
   app.use(`/${apiVersion}/locations`, locationRouter);

@@ -1,10 +1,12 @@
 const JobModel = require("../models/JobModel");
+const ApplyManageModel = require('../models/ApplyManageModel')
 const jsonRes = require('../helper/json-response')
 const CompanyModel = require('../models/CompanyModel')
 const getUserRequest = require('../helper/get-user-request')
 const UserModel = require('../models/UserModel')
 const sendEmail = require('../helper/send-email')
 const CONSTANTS = require('../../constants')
+const CvModel = require('../models/CvModel')
 
 class JobController {
 
@@ -118,7 +120,7 @@ class JobController {
         }
         const { candidateApplied, companyId, ...dataRes } = jobDetail._doc
 
-        CompanyModel.findOne({ id: companyId })
+        CompanyModel.findOne({ _id: companyId })
           .then(companyDetail => {
             if (user) {
               let isApplied = false
@@ -158,6 +160,7 @@ class JobController {
   async candidateApply(req, res, next) {
     const jobId = req.params.id
     const cvId = req.body.cvId
+    const userId = req.userRequest._doc._id
     
     const sendMailToEmployer = async (mailOptions) => {
       return await sendEmail(mailOptions).result
@@ -173,47 +176,85 @@ class JobController {
           ))
         }
 
-        const { candidateApplied, creatorId, name } = jobDetail._doc
+        CvModel.findOne({ _id: cvId })
+          .then(cv => {
+            if (!cv) {
+              return res.status(200).json(jsonRes.error(
+                400,
+                null,
+                "NOT_EXISTS_CV"
+              ))
+            }
+            const { candidateApplied, creatorId, name } = jobDetail._doc
 
-        JobModel.findOneAndUpdate({ _id: jobId }, { candidateApplied: [...candidateApplied, {cvId, accept: false}] })
-          .then(() => {
-            UserModel.findOne({ id: creatorId })
-              .then(creator => {
-                const { email, fullname } = creator._doc
-                const  mailOptions = {
-                  from: 'cvfreecontact@gmail.com',
-                  to: email,
-                  subject: 'CVFREE - Ứng viên mới ứng tuyển',
-                  text: `Xin chào ${fullname},
-        
-                    Một ứng viên vừa ứng tuyển vào công việc "${name}" mà bạn đã đăng.
-                    Hãy đăng nhập vào CVFREE để xem chi tiết thông tin.
-                    ${CONSTANTS.clientURL}/sign-in
-        
-                    Trân trọng,
-                    CVFREE
-                  `
-                };
-                console.log('ducnh2', email);
-                const isSentEmail = sendMailToEmployer(mailOptions)
-                if (isSentEmail) {
-                  return res.status(200).json(jsonRes.success( 200, undefined, "APPLY_JOB_SUCCESS" ))
-                }
-                else {
-                  return res.status(400).json(jsonRes.error(400, isSentEmail.error))
-                }
+            JobModel.findOneAndUpdate({ _id: jobId }, { candidateApplied: [...candidateApplied, {cvId, accept: false}] })
+              .then(() => {
+                UserModel.findOne({ id: creatorId })
+                  .then(creator => {
+                    const { email, fullname } = creator._doc
+                    const  mailOptions = {
+                      from: 'cvfreecontact@gmail.com',
+                      to: email,
+                      subject: 'CVFREE - Ứng viên mới ứng tuyển',
+                      text: `Xin chào ${fullname},
+            
+                        Một ứng viên vừa ứng tuyển vào công việc "${name}" mà bạn đã đăng.
+                        Hãy đăng nhập vào CVFREE để xem chi tiết thông tin.
+                        ${CONSTANTS.clientURL}/sign-in
+            
+                        Trân trọng,
+                        CVFREE
+                      `
+                    };
+                    const isSentEmail = sendMailToEmployer(mailOptions)
+                    if (isSentEmail) {
+                      ApplyManageModel.findOne({ userId })
+                      .then(applyManage => {
+                        const dataApply = {
+                          jobId: jobDetail._doc._id,
+                          jobName: jobDetail._doc.name,
+                          cvId,
+                          cvName: cv._doc.name,
+                          cvFullname: cv._doc.detail.fullname,
+                          status: 'WAITING',
+                          createdAt: new Date()
+                        }
+                        if (!applyManage) {
+                          const newApply = new ApplyManageModel({
+                            userId,
+                            applies: [dataApply]
+                          })
+                          newApply.save()
+                            .then(() => {
+                              return res.status(200).json(jsonRes.success( 200, undefined, "APPLY_JOB_SUCCESS" ))
+                            })
+                            .catch(e => res.status(400).json(jsonRes.error(400, e.message))) 
+                        }
+                        else {
+                          const oldApplies = applyManage._doc.applies
+                          const newApplies = oldApplies ? [...oldApplies, dataApply] : [dataApply]
+                          ApplyManageModel.findOneAndUpdate({ userId }, {
+                            applies: newApplies
+                          })
+                            .then(() => {
+                              return res.status(200).json(jsonRes.success( 200, undefined, "APPLY_JOB_SUCCESS" ))
+                            })
+                            .catch(e => res.status(400).json(jsonRes.error(400, e.message)))
+                        }
+                      })
+                      .catch(e => res.status(400).json(jsonRes.error(400, e.message)))
+                    }
+                    else {
+                      return res.status(400).json(jsonRes.error(400, isSentEmail.error))
+                    }
+                  })
+                  .catch(e => res.status(400).json(jsonRes.error(400, e.message))) 
               })
-              .catch(e => {
-                return res.status(400).json(jsonRes.error(400, e.message))
-              }) 
-          })
-          .catch(e => {
-            return res.status(400).json(jsonRes.error(400, e.message))
-          })
+              .catch(e => res.status(400).json(jsonRes.error(400, e.message))) 
+              })
+          .catch(e => res.status(400).json(jsonRes.error(400, e.message))) 
       })
-      .catch(e => {
-      return res.status(400).json(jsonRes.error(400, e.message))
-    })
+      .catch(e => res.status(400).json(jsonRes.error(400, e.message))) 
   }
 
   // // [PUT] /cvs
