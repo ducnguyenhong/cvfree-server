@@ -6,7 +6,7 @@ const Schema = mongoose.Schema
 const Job = new Schema({
   creatorId: {type: Number, required: true},
   name: { type: String, required: true },
-  companyId: {type: Number},
+  companyId: {type: String},
   address: {
     value: { district: String, city: String },
     label: String

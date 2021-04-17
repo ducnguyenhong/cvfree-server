@@ -12,7 +12,7 @@ const User = new Schema({
   birthday: { type: Number },
   verify: {type: Boolean},
   coin: { type: Number },
-  companyId: { type: Number },
+  companyId: { type: String },
   country: { type: String, maxlength: 255 },
   fullname: { type: String, maxlength: 255 },
   gender: { type: String, maxlength: 6 },

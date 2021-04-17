@@ -19,8 +19,8 @@ class CandidateController {
               items: [],
               page,
               size,
-              totalItems: data.length,
-              totalPages
+              totalItems: 0,
+              totalPages: 0
             },
             "GET_DATA_SUCCESS"
           ))

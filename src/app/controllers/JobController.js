@@ -87,8 +87,8 @@ class JobController {
 
   // [POST] /jobs
   async create(req, res) {
+    const {companyId} = req.userRequest._doc
     const creatorId = req.userRequest._doc.id
-    const companyId = req.userRequest._doc.companyId
     const newJob = new JobModel({...req.body, creatorId, companyId})
     newJob.save()
       .then(() => {

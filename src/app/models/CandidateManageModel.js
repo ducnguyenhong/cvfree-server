@@ -11,7 +11,9 @@ const CandidateManage = new Schema({
       jobName: String,
       cvId: String,
       candidateFullname: String,
-      isDone: Boolean
+      isDone: Boolean,
+      candidateId: String,
+      createdAt: Date
     }
   ]
 }, { timestamps: true }) // auto generate createdAt, updatedAt

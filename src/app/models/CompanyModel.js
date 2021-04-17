@@ -13,10 +13,7 @@ const Company = new Schema({
     street: String
   } | null,
   website: String,
-  personnelSize: {
-    from: String,
-    to: String
-  },
+  personnelSize: String,
   background: String,
   intro: String,
   logo: String,

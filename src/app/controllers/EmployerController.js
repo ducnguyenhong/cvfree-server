@@ -137,10 +137,12 @@ class EmployerController {
             .then(candidateManage => {
               const newData = {
                 cvId,
+                candidateId: cv._doc.candidateId,
                 candidateFullname: cv._doc.detail.fullname,
                 jobId,
                 jobName: job._doc.name,
-                isDone: false
+                isDone: false,
+                createdAt: new Date()
               }
 
               if (!candidateManage) {

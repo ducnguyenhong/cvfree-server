@@ -1,6 +1,7 @@
 const CompanyModel = require("../models/CompanyModel");
 const jsonRes = require('../helper/json-response')
 const UserModel = require('../models/UserModel')
+const JobModel = require('../models/JobModel')
 
 class CompanyController {
 
@@ -98,7 +99,7 @@ class CompanyController {
     const newCompany = new CompanyModel({...req.body, creatorId})
     newCompany.save()
       .then((company) => {
-        const companyId = company._doc.id
+        const companyId = company._doc._id
         UserModel.findOneAndUpdate({ id: creatorId }, { companyId })
           .then(() => {
             res.status(201).json(jsonRes.success(201, { companyInfo: newCompany }, "CREATED_COMPANY_SUCCESS"))
@@ -114,8 +115,8 @@ class CompanyController {
 
   // [GET] /company/detail
   async showDetail(req, res, next) {
-    const companyId = req.userRequest._doc.companyId
-    CompanyModel.findOne({id: companyId})
+    const companyId = req.params.id
+    CompanyModel.findOne({_id: companyId})
       .then(companyDetail => {
         if (!companyDetail) {
           return res.status(200).json(jsonRes.success(
@@ -128,6 +129,44 @@ class CompanyController {
         return res.status(200).json(jsonRes.success(
           200,
           { companyDetail: dataRes },
+          "GET_DATA_SUCCESS"
+        ))
+      })
+      .catch(e => {
+      return res.status(400).json(jsonRes.error(400, e.message))
+    })
+  }
+
+  // [GET] /company/:id/jobs
+  async showListJob(req, res, next) {
+    const companyId = req.params.id
+    const page = parseInt(req.query.page) || 1
+    const size = parseInt(req.query.size) || 10
+    const start = (page - 1) * size
+    const end = page * size
+    
+    JobModel.find({companyId, status: 'ACTIVE'})
+      .then(jobs => {
+        let totalPages = 0;
+        if (jobs.length <= size) {
+          totalPages = 1
+        }
+        if (jobs.length > size) {
+          totalPages = (jobs.length % size === 0) ? (jobs.length / size) : Math.ceil(jobs.length / size) + 1
+        }
+        const dataRes = jobs.slice(start, end).map(item => {
+          const { candidateApplied, ...jobsRes } = item._doc
+          return jobsRes
+        })
+        return res.status(200).json(jsonRes.success(
+          200,
+          {
+            items: dataRes,
+            page,
+            size,
+            totalItems: jobs.length,
+            totalPages
+          },
           "GET_DATA_SUCCESS"
         ))
       })
