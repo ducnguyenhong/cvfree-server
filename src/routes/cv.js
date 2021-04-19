@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const cvController = require('../app/controllers/CvController');
-const authMDW = require('../app/helper/middle-ware-auth')
+const authMDW = require('../app/middlewares/check-auth')
 
 router.get('/my-cvs/suggest', authMDW, cvController.showMyCvsSuggest);
 router.get('/my-cvs', authMDW, cvController.showMyCvs);

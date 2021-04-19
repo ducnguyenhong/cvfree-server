@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const companyController = require('../app/controllers/CompanyController');
-const authMDW = require('../app/helper/middle-ware-auth')
+const authMDW = require('../app/middlewares/check-auth')
 
 router.get('/:id', companyController.showDetail);
 router.get('/:id/jobs', companyController.showListJob);

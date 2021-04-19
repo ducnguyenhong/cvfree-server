@@ -1,132 +1,61 @@
-const UserModel = require("../models/UserModel");
-const jsonRes = require('../helper/json-response')
+const UserModel = require("../models/UserModel")
+const resSuccess = require('../response/response-success')
+const resError = require('../response/response-error')
+const getPagingData = require('../helper/get-paging-data')
+const checkUserTypeRequest = require('../helper/check-user-type-request')
+const getQueryParams = require('../helper/get-query-params')
 class UserController {
 
   // [GET] /users
   async showList(req, res, next) {
-    const page = parseInt(req.query.page) || 1
-    const size = parseInt(req.query.size) || 10
-    const start = (page - 1) * size
-    const end = page * size
-    
-    UserModel.find()
+    await checkUserTypeRequest(req, res, next, ['ADMIN'])
+    const objQuery = {}
+
+    for (const [key, value] of Object.entries(getQueryParams(req))) {
+      if (key && value && key !== 'page' && key !== 'size') {
+        if (key === 'keyword') {
+          objQuery.fullname = value
+        }
+        else if (key === 'verify') {
+          if (verify === 'true') {
+            objQuery.verify = true
+          }
+          if (verify === 'false') {
+            objQuery.verify = false
+          }
+        }
+        else {
+          objQuery[`${key}`] = value
+        }
+      }
+    }
+
+    UserModel.find(objQuery)
       .then(users => {
-        let totalPages = 0;
-        if (users.length <= size) {
-          totalPages = 1
-        }
-        if (users.length > size) {
-          totalPages = (users.length % size === 0) ? (users.length / size) : Math.ceil(users.length / size) + 1
-        }
-        const dataRes = users.slice(start, end).map(item => {
-          const { password, _id, __v, ...userRes } = item._doc
-          return userRes
+        const { dataPaging, pagination } = getPagingData(req, users)
+        const dataRes = dataPaging.map(item => {
+          const { password, _id, ...data } = item
+          return data
         })
-        return res.status(200).json(jsonRes.success(
-          200,
-          {
-            items: dataRes,
-            page,
-            size,
-            totalItems: users.length,
-            totalPages
-          },
-          "GET_DATA_SUCCESS"
-        ))
+        return resSuccess(res, {
+          items: dataRes,
+          pagination
+        })
       })
-      .catch(e => {
-      return res.status(400).json(jsonRes.error(400, e.message))
-    })
+      .catch(e => resError(res, e.message))
   }
 
   // [GET] /users/:id
   async showDetail(req, res, next) {
-    const userId = req.params.id
-    UserModel.findOne({id: userId})
-      .then(userDetail => {
-        const { password, _id, __v, ...dataRes } = userDetail._doc
-        return res.status(200).json(jsonRes.success(
-          200,
-          { userDetail: dataRes },
-          "GET_DATA_SUCCESS"
-        ))
+    await checkUserTypeRequest(req, res, next, ['ADMIN'])
+    const {_id} = req.params
+    UserModel.findOne({_id})
+      .then(user => {
+        const { password, _id, __v, ...dataRes } = user._doc
+        return resSuccess(res, {user: dataRes})
       })
-      .catch(e => {
-      return res.status(400).json(jsonRes.error(400, e.message))
-    })
+      .catch(e => resError(res, e.message))
   }
-
-
-  // [GET] /
-  // index(req, res, next) {
-  //   const page = parseInt(req.query.page) || 1 // n
-  //   const size = parseInt(req.query.size) || 10 // x
-  //   const start = (page - 1) * size
-  //   const end = page * size
-
-  //   //promise
-  //   User.find({})
-  //     .then(courses => {
-  //       const data = multipleMongooseToObject(courses)
-  //       const coursesPaginate = data.slice(start, end)
-  //       res.render('home', { courses: coursesPaginate })
-  //     })
-  //       // const totalItems = data.count((err, count) => {
-  //       //   if (err) {
-  //       //     next()
-  //       //   }
-  //       //   return count
-  //       // })
-  //     //   const response = {
-  //     //     code: 200,
-  //     //     data: {
-  //     //       items: coursesPaginate,
-  //     //       page,
-  //     //       size,
-  //     //       totalItems: data.length
-  //     //     },
-  //     //     success: true
-  //     //   }
-  //     //   console.log('ducnh', response);
-  //     //   res.json(response)
-  //     // })
-  //     .catch(next)
-  // }
-
-  // [POST] /courses/upload
-  // upload(req, res, next) {
-  //   console.log('res', req);
-  // }
-
-  // [GET] /courses/create
-  // create(req, res, next) {
-  //   res.render('courses/create')
-  // }
-
-  // [GET] / courses/:id/edit
-  // showEdit(req, res, next) {
-  //   Course.findById(req.params.id)
-  //     .then(course => res.render('courses/update', { course: mongooseToObject(course) }))
-  //   .catch(next)
-  // }
-
-  
-
-  // [PUT] /courses/:id
-  // update(req, res, next) {
-  //   Course.updateOne({ _id: req.params.id }, req.body)
-  //     .then(() => res.redirect('/my-courses'))
-  //     .catch(next)
-  // }
-
-  // [GET] /courses/:slug
-  // show(req, res, next) {
-  //   Course.findOne({ slug: req.params.slug })
-  //     .then(course => {
-  //       res.render('courses/show', {course: mongooseToObject(course)})
-  //     })
-  //     .catch(next)
-  // }
 }
 
 module.exports = new UserController();

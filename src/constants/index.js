@@ -1,4 +1,4 @@
-const CONSTANTS = {
+const Constants = {
   serverPort: 1234,
   serverURL: 'http://127.0.0.1:1234',
   clientURL: 'http://localhost:1112',
@@ -7,4 +7,4 @@ const CONSTANTS = {
   accessTokenSecret: "CVFREE_Server_ducnh99"
 }
 
-module.exports = CONSTANTS
+module.exports = Constants

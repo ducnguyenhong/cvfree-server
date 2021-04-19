@@ -1,106 +1,62 @@
 const JobModel = require("../models/JobModel");
 const ApplyManageModel = require('../models/ApplyManageModel')
-const jsonRes = require('../helper/json-response')
 const CompanyModel = require('../models/CompanyModel')
 const getUserRequest = require('../helper/get-user-request')
 const UserModel = require('../models/UserModel')
 const sendEmail = require('../helper/send-email')
-const CONSTANTS = require('../../constants')
+const Constants = require('../../constants')
 const CvModel = require('../models/CvModel')
+const resSuccess = require('../response/response-success')
+const resError = require('../response/response-error')
+const getPagingData = require('../helper/get-paging-data')
+const checkUserTypeRequest = require('../helper/check-user-type-request')
 
 class JobController {
 
-  // [GET] /jobs
-  async showList(req, res, next) {
-    const creatorId = req.userRequest._doc.id 
-    const page = parseInt(req.query.page) || 1
-    const size = parseInt(req.query.size) || 10
-    const start = (page - 1) * size
-    const end = page * size
+  // [GET] /jobs/employer
+  async showListJobOfEmployer(req, res, next) {
+    await checkUserTypeRequest(req, res, next, ['ADMIN', 'EMPLOYER'])
+    const employerId = req.params.id
+    const { _id, type } = req.userRequest._doc
+    if (type === 'EMPLOYER' && employerId !== _id.toString()) {
+      return resError(res, 'UNAUTHORIZED', 401)
+    }
     
-    JobModel.find({creatorId, status: 'ACTIVE'})
+    JobModel.find({creatorId: _id, status: 'ACTIVE'})
       .then(jobs => {
-        let totalPages = 0;
-        if (jobs.length <= size) {
-          totalPages = 1
-        }
-        if (jobs.length > size) {
-          totalPages = (jobs.length % size === 0) ? (jobs.length / size) : Math.ceil(jobs.length / size) + 1
-        }
-        const dataRes = jobs.slice(start, end).map(item => {
-          const { candidateApplied, ...jobsRes } = item._doc
-          let newCandidateApplied = [...candidateApplied]
-          newCandidateApplied = newCandidateApplied.filter(item => item.accept === false)
-          return {...jobsRes, candidateApplied: newCandidateApplied}
-        })
-        return res.status(200).json(jsonRes.success(
-          200,
-          {
-            items: dataRes,
-            page,
-            size,
-            totalItems: jobs.length,
-            totalPages
-          },
-          "GET_DATA_SUCCESS"
-        ))
+        const { dataPaging, pagination } = getPagingData(req, jobs)
+        return resSuccess(res, {items: dataPaging, pagination})
       })
-      .catch(e => {
-      return res.status(400).json(jsonRes.error(400, e.message))
-    })
+      .catch(e => resError(res, e.message))
   }
 
-  // [GET] /jobs
-  async showListNewest(req, res, next) {
-    const page = parseInt(req.query.page) || 1
-    const size = parseInt(req.query.size) || 10
-    const start = (page - 1) * size
-    const end = page * size
-    
+  // [GET] /jobs/newest
+  async showListNewest(req, res) {
     JobModel.find({status: 'ACTIVE'}).sort({ updatedAt: -1 })
       .then(jobs => {
-        let totalPages = 0;
-        if (jobs.length <= size) {
-          totalPages = 1
-        }
-        if (jobs.length > size) {
-          totalPages = (jobs.length % size === 0) ? (jobs.length / size) : Math.ceil(jobs.length / size) + 1
-        }
-        const dataRes = jobs.slice(start, end).map(item => {
-          const { ...jobsRes } = item._doc
+        const { dataPaging, pagination } = getPagingData(req, jobs)
+        const dataRes = dataPaging.map(item => {
+          const { creatorId, candidateApplied, ...jobsRes } = item
           return jobsRes
         })
-        return res.status(200).json(jsonRes.success(
-          200,
-          {
-            items: dataRes,
-            page,
-            size,
-            totalItems: jobs.length,
-            totalPages
-          },
-          "GET_DATA_SUCCESS"
-        ))
+        return resSuccess(res, {items: dataRes, pagination})
       })
-      .catch(e => {
-      return res.status(400).json(jsonRes.error(400, e.message))
-    })
+      .catch(e => resError(res, e.message))
   }
 
   // [POST] /jobs
   async create(req, res) {
-    const {companyId} = req.userRequest._doc
-    const creatorId = req.userRequest._doc.id
-    const newJob = new JobModel({...req.body, creatorId, companyId})
+    const { _id, type, companyId } = req.userRequest._doc
+    if (type !== 'EMPLOYER') {
+      return resError(res, 'UNAUTHORIZED', 401)
+    }
+    const newJob = new JobModel({...req.body, creatorId: _id, companyId})
     newJob.save()
-      .then(() => {
-        res.status(201).json(jsonRes.success(201, { jobInfo: newJob }, "CREATED_JOB_SUCCESS"))
-      })
-      .catch((e) => {
-        res.status(400).json(jsonRes.error(400, e.message))
-      })
+      .then(() => resSuccess(res, {jobInfo: newJob}, 'CREATED_JOB_SUCCESS'))
+      .catch(e => resError(res, e.message))
   }
 
+  // [GET] /jobs/:id
   async showDetail(req, res, next) {
     const bearerToken = req.headers.authorization;
     const jobId = req.params.id
@@ -110,20 +66,22 @@ class JobController {
     }
 
     JobModel.findOne({_id: jobId})
-      .then(jobDetail => {
-        if (!jobDetail) {
-          return res.status(200).json(jsonRes.success(
-            200,
-            { jobDetail: null },
-            "NOT_EXISTS_JOB"
-          ))
+      .then(job => {
+        if (!job) {
+          return resSuccess(res, { jobDetail: null }, 'NOT_EXISTS_JOB')
         }
-        const { candidateApplied, companyId, ...dataRes } = jobDetail._doc
+
+        const { candidateApplied, companyId, ...dataRes } = job._doc
 
         CompanyModel.findOne({ _id: companyId })
-          .then(companyDetail => {
-            if (user) {
-              let isApplied = false
+          .then(company => {
+            const jobDetail = {
+              ...dataRes,
+              companyName: company.name,
+              companyLogo: company.logo
+            }
+            if (user && user._doc.type === 'USER') {
+              let isApplied = false // nếu có token, check xem job đó đã apply chưa
               const listCV = user._doc.listCV
               if (listCV && listCV.length > 0 && candidateApplied && candidateApplied.length > 0) {
                 for (let i = 0; i < candidateApplied.length; i++){
@@ -134,60 +92,43 @@ class JobController {
                   }
                 }
               }
-              return res.status(200).json(jsonRes.success(
-                200,
-                { jobDetail: {...dataRes, isApplied, companyName: companyDetail.name, companyLogo: companyDetail.logo} },
-                "GET_DATA_SUCCESS"
-              ))
+              jobDetail.isApplied = isApplied
             }
-            else {
-              return res.status(200).json(jsonRes.success(
-                200,
-                { jobDetail: {...dataRes, companyName: companyDetail.name, companyLogo: companyDetail.logo} },
-                "GET_DATA_SUCCESS"
-              ))
-            }
+            return resSuccess(res, { jobDetail})
           })
-          .catch(e => {
-            return res.status(400).json(jsonRes.error(400, e.message))
-          })
+          .catch(e => resError(res, e.message))
       })
-      .catch(e => {
-      return res.status(400).json(jsonRes.error(400, e.message))
-    })
+      .catch(e => resError(res, e.message))
   }
 
+  // [POST] /jobs/:id/candidate-apply
   async candidateApply(req, res, next) {
     const jobId = req.params.id
     const cvId = req.body.cvId
-    const userId = req.userRequest._doc._id
+    const { type, _id: userId } = req.userRequest._doc
     
+    if (type !== 'USER') {
+      return resError(res, 'UNAUTHORIZED', 401)
+    }
+
     const sendMailToEmployer = async (mailOptions) => {
       return await sendEmail(mailOptions).result
     }
 
     JobModel.findOne({_id: jobId})
-      .then(jobDetail => {
-        if (!jobDetail) {
-          return res.status(200).json(jsonRes.success(
-            200,
-            { jobDetail: null },
-            "NOT_EXISTS_JOB"
-          ))
+      .then(job => {
+        if (!job) {
+          return resError(res, 'NOT_EXISTS_JOB')
         }
 
         CvModel.findOne({ _id: cvId })
           .then(cv => {
             if (!cv) {
-              return res.status(200).json(jsonRes.error(
-                400,
-                null,
-                "NOT_EXISTS_CV"
-              ))
+              return resError(res, 'NOT_EXISTS_CV')
             }
-            const { candidateApplied, creatorId, name } = jobDetail._doc
+            const { candidateApplied, creatorId, name } = job._doc
 
-            JobModel.findOneAndUpdate({ _id: jobId }, { candidateApplied: [...candidateApplied, {cvId, accept: false}] })
+            JobModel.findOneAndUpdate({ _id: jobId }, { candidateApplied: [...candidateApplied, {cvId}] })
               .then(() => {
                 UserModel.findOne({ id: creatorId })
                   .then(creator => {
@@ -196,23 +137,18 @@ class JobController {
                       from: 'cvfreecontact@gmail.com',
                       to: email,
                       subject: 'CVFREE - Ứng viên mới ứng tuyển',
-                      text: `Xin chào ${fullname},
-            
-                        Một ứng viên vừa ứng tuyển vào công việc "${name}" mà bạn đã đăng.
-                        Hãy đăng nhập vào CVFREE để xem chi tiết thông tin.
-                        ${CONSTANTS.clientURL}/sign-in
-            
-                        Trân trọng,
-                        CVFREE
-                      `
+                      text: `Xin chào ${fullname}. Một ứng viên vừa ứng tuyển vào công việc "${name}" mà bạn đã đăng tuyển. Hãy đăng nhập vào CVFREE để xem chi tiết thông tin. (${Constants.clientURL}/sign-in)
+
+Trân trọng,
+CVFREE`
                     };
                     const isSentEmail = sendMailToEmployer(mailOptions)
-                    if (isSentEmail) {
+                    if (isSentEmail) { // thêm vào bảng applymanage
                       ApplyManageModel.findOne({ userId })
                       .then(applyManage => {
                         const dataApply = {
-                          jobId: jobDetail._doc._id,
-                          jobName: jobDetail._doc.name,
+                          jobId: job._doc._id,
+                          jobName: job._doc.name,
                           cvId,
                           cvName: cv._doc.name,
                           cvFullname: cv._doc.detail.fullname,
@@ -225,10 +161,8 @@ class JobController {
                             applies: [dataApply]
                           })
                           newApply.save()
-                            .then(() => {
-                              return res.status(200).json(jsonRes.success( 200, undefined, "APPLY_JOB_SUCCESS" ))
-                            })
-                            .catch(e => res.status(400).json(jsonRes.error(400, e.message))) 
+                            .then(() => resSuccess(res, null, 'APPLY_JOB_SUCCESS'))
+                            .catch(e => resError(res, e.message))
                         }
                         else {
                           const oldApplies = applyManage._doc.applies
@@ -236,52 +170,24 @@ class JobController {
                           ApplyManageModel.findOneAndUpdate({ userId }, {
                             applies: newApplies
                           })
-                            .then(() => {
-                              return res.status(200).json(jsonRes.success( 200, undefined, "APPLY_JOB_SUCCESS" ))
-                            })
-                            .catch(e => res.status(400).json(jsonRes.error(400, e.message)))
+                          .then(() => resSuccess(res, null, 'APPLY_JOB_SUCCESS'))
+                          .catch(e => resError(res, e.message))
                         }
                       })
-                      .catch(e => res.status(400).json(jsonRes.error(400, e.message)))
+                      .catch(e => resError(res, e.message))
                     }
                     else {
-                      return res.status(400).json(jsonRes.error(400, isSentEmail.error))
+                      return resError(res, isSentEmail.error)
                     }
                   })
-                  .catch(e => res.status(400).json(jsonRes.error(400, e.message))) 
+                  .catch(e => resError(res, e.message)) 
               })
-              .catch(e => res.status(400).json(jsonRes.error(400, e.message))) 
+              .catch(e => resError(res, e.message)) 
               })
-          .catch(e => res.status(400).json(jsonRes.error(400, e.message))) 
+          .catch(e => resError(res, e.message)) 
       })
-      .catch(e => res.status(400).json(jsonRes.error(400, e.message))) 
+      .catch(e => resError(res, e.message)) 
   }
-
-  // // [PUT] /cvs
-  // async update(req, res) {
-  //   const cvId = req.params.id
-  //   CvModel.findByIdAndUpdate(cvId, req.body)
-  //     .then(() => {
-  //       res.status(200).json(jsonRes.success(200, { cvInfo: req.body }, "UPDATED_CV_SUCCESS"))
-  //     })
-  //     .catch(e => {
-  //     return res.status(400).json(jsonRes.error(400, e.message))
-  //   })
-    
-  // }
-
-  // // [DELETE] /cvs/:id
-  // async delete(req, res) {
-  //   const cvId = req.params.id
-  //   CvModel.findOneAndUpdate(cvId, {status: 'INACTIVE'})
-  //     .then(() => {
-  //       res.status(200).json(jsonRes.success(200, null, "DELETED_CV_SUCCESS"))
-  //     })
-  //     .catch(e => {
-  //     return res.status(400).json(jsonRes.error(400, e.message))
-  //   })
-    
-  // }
 
 }
 

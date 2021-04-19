@@ -1,21 +1,20 @@
-const LocationModel = require("../models/LocationModel");
-const jsonRes = require('../helper/json-response')
+const LocationModel = require("../models/LocationModel")
+const resSuccess = require('../response/response-success')
+const resError = require('../response/response-error')
 
 class LocationController {
 
   // [GET] /locations/cities
-  async showListCity(req, res, next) {
+  async showListCity(req, res) {
     const keyword = req.query.keyword
     LocationModel.find({name: new RegExp(keyword, "i")})
       .then(locations => {
         const dataRes = locations.map(item => {
           return {value: item.id, label: item.name}
         })
-        return res.status(200).json(jsonRes.success( 200, { items: dataRes }, "GET_DATA_SUCCESS" ))
+        return resSuccess(res, {items: dataRes})
       })
-      .catch(e => {
-      return res.status(400).json(jsonRes.error(400, e.message))
-    })
+      .catch(e => resError(res, e.message))
   }
 
   // [GET] /locations/cities/:cityId
@@ -37,11 +36,9 @@ class LocationController {
             return {value: item.id, label: item.name}
           })
         }
-        return res.status(200).json(jsonRes.success( 200, { items: dataRes }, "GET_DATA_SUCCESS" ))
+        return resSuccess(res, {items: dataRes})
       })
-      .catch(e => {
-      return res.status(400).json(jsonRes.error(400, e.message))
-    })
+      .catch(e => resError(res, e.message))
   }
 
   // [GET] /locations/cities/:cityId/districts/:districtId
@@ -49,20 +46,18 @@ class LocationController {
     const cityId = req.params.cityId
     const districtId = req.params.districtId
     const keyword = req.query.keyword
-    LocationModel.find({id: cityId ,name: new RegExp(keyword, "i")})
+    LocationModel.find({id: cityId, name: new RegExp(keyword, "i")})
       .then(city => {
         return city[0].districts.map(item => {
           if (item.id === districtId) {
             const dataRes = item.wards.map(item => {
               return {value: item.id, label: item.name}
             })
-            return res.status(200).json(jsonRes.success( 200, { items: dataRes }, "GET_DATA_SUCCESS" ))
+            return resSuccess(res, {items: dataRes})
           }
         })
       })
-      .catch(e => {
-      return res.status(400).json(jsonRes.error(400, e.message))
-    })
+      .catch(e => resError(res, e.message))
   }
 
 

@@ -1,15 +1,13 @@
-const jsonRes = require('../helper/json-response')
-const CONSTANTS = require('../../constants')
+const Constants = require('../../Constants')
+const resSuccess = require('../response/response-success')
 
-class UserController {
+class MediaController {
 
   // [POST] /media/upload
-  async upload(req, res, next) {
+  async upload(req, res) {
     const staticURL = `${req.file.path}`.slice(10, req.file.path.length)
-    res.status(200).json(jsonRes.success(200, {
-      url: `${CONSTANTS.serverURL}${staticURL}`
-    }, 'UPLOAD_SUCCESS'))
+    return resSuccess(res, {url: `${Constants.serverURL}${staticURL}`}, 'UPLOAD_SUCCESS')
   }
 }
 
-module.exports = new UserController();
+module.exports = new MediaController();

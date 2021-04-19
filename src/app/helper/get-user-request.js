@@ -3,17 +3,13 @@ const CONSTANTS = require('../../constants')
 const verifyToken = require('../helper/verify-token')
 
 const getUserRequest = async (bearerToken) => {
-
   if (!bearerToken) {
 		return null
   }
   
-  const accessTokenFromHeader = bearerToken.split(' ')[1]
-	const accessTokenSecret = CONSTANTS.accessTokenSecret;
-	const verified = await verifyToken(
-		accessTokenFromHeader,
-		accessTokenSecret,
-  );
+  const accessToken = bearerToken.split(' ')[1]
+	const accessTokenSecret = CONSTANTS.accessTokenSecret
+	const verified = await verifyToken( accessToken, accessTokenSecret )
   
 	if (!verified) {
 		return null

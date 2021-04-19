@@ -1,10 +1,9 @@
 const mongoose = require('mongoose')
 const autoIncrement = require('mongoose-auto-increment')
-
 const Schema = mongoose.Schema
 
 const Job = new Schema({
-  creatorId: {type: Number, required: true},
+  creatorId: {type: String, required: true},
   name: { type: String, required: true },
   companyId: {type: String},
   address: {
