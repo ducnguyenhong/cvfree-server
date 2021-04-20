@@ -13,6 +13,21 @@ const checkUserTypeRequest = require('../helper/check-user-type-request')
 
 class JobController {
 
+  // [GET] /jobs
+  async showList(req, res, next) {
+    await checkUserTypeRequest(req, res, next, ['ADMIN'])
+    JobModel.find()
+      .then(jobs => {
+        const { dataPaging, pagination } = getPagingData(req, jobs)
+        const dataRes = dataPaging.map(item => {
+          const { creatorId, candidateApplied, ...jobsRes } = item
+          return jobsRes
+        })
+        return resSuccess(res, {items: dataRes, pagination})
+      })
+      .catch(e => resError(res, e.message))
+  }
+
   // [GET] /jobs/employer
   async showListJobOfEmployer(req, res, next) {
     await checkUserTypeRequest(req, res, next, ['ADMIN', 'EMPLOYER'])
@@ -46,13 +61,21 @@ class JobController {
 
   // [POST] /jobs
   async create(req, res) {
-    const { _id, type, companyId } = req.userRequest
-    if (type !== 'EMPLOYER') {
-      return resError(res, 'UNAUTHORIZED', 401)
-    }
-    const newJob = new JobModel({...req.body, creatorId: _id, companyId})
-    newJob.save()
-      .then(() => resSuccess(res, {jobInfo: newJob}, 'CREATED_JOB_SUCCESS'))
+    await checkUserTypeRequest(req, res, next, ['EMPLOYER'])
+    const { _id, companyId, avatar, fullname } = req.userRequest
+
+    CompanyModel.findOne({ _id: companyId })
+      .then(company => {
+        const {name, logo} = company._doc
+        const newJob = new JobModel({
+          ...req.body,
+          company: { logo, name, id: companyId },
+          creator: { id: _id, avatar, fullname}
+        })
+        newJob.save()
+          .then(() => resSuccess(res, {jobInfo: newJob}, 'CREATED_JOB_SUCCESS'))
+          .catch(e => resError(res, e.message))
+      })
       .catch(e => resError(res, e.message))
   }
 
@@ -77,8 +100,11 @@ class JobController {
           .then(company => {
             const jobDetail = {
               ...dataRes,
-              companyName: company.name,
-              companyLogo: company.logo
+              company: {
+                id: companyId,
+                name: company.name,
+                logo: company.logo
+              }
             }
             if (user && user._doc.type === 'USER') {
               let isApplied = false // nếu có token, check xem job đó đã apply chưa

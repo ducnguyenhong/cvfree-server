@@ -6,6 +6,8 @@ const Company = new Schema({
   creatorId: {type: String, required: true},
   name: { type: String, required: true },
   taxCode: String,
+  email: String,
+  phone: String,
   address: {
     value: { district: String, city: String },
     label: String,

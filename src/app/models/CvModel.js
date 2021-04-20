@@ -28,7 +28,6 @@ const Cv = new Schema({
       fullname: {type: String, required: true},
       avatar: { type: String },
       candidateId: { type: String },
-      status: {type: String},
       applyPosition: { type: String },
       birthday: { type: Number },
       gender: {type: String},

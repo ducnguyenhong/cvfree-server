@@ -3,9 +3,17 @@ const autoIncrement = require('mongoose-auto-increment')
 const Schema = mongoose.Schema
 
 const Job = new Schema({
-  creatorId: {type: String, required: true},
+  creator: {
+    id: String,
+    fullname: String,
+    avatar: String
+  },
   name: { type: String, required: true },
-  companyId: {type: String},
+  company: {
+    name: String,
+    logo: String,
+    id: String
+  },
   address: {
     value: { district: String, city: String },
     label: String

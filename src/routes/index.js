@@ -22,7 +22,7 @@ const route = (app) => {
   app.use(`/${apiVersion}/auth`, authRouter);
   app.use(`/${apiVersion}/media`, mediaRouter);
   app.use(`/${apiVersion}/jobs`, jobRouter);
-  app.use(`/${apiVersion}/company`, companyRouter);
+  app.use(`/${apiVersion}/companies`, companyRouter);
 };
 
 module.exports = route;

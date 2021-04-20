@@ -8,7 +8,7 @@ const checkUserTypeRequest = require('../helper/check-user-type-request')
 
 class CompanyController {
 
-  // [GET] /company
+  // [GET] /companies
   async showList(req, res, next) {
     await checkUserTypeRequest(req, res, next, ['ADMIN'])
 
@@ -20,7 +20,7 @@ class CompanyController {
       .catch(e => resError(res, e.message))
   }
 
-  // [GET] /company/employer
+  // [GET] /companies/employer
   async showCompanyOfEmployer(req, res, next) {
     await checkUserTypeRequest(req, res, next, ['EMPLOYER'])
     const {companyId} = req.userRequest
@@ -40,7 +40,7 @@ class CompanyController {
       .catch(e => resError(res, e.message))
   }
 
-  // [GET] /company/suggest
+  // [GET] /companies/suggest
   async suggest(req, res, next) {
     await checkUserTypeRequest(req, res, next, ['EMPLOYER'])
     const objQuery = {}
@@ -60,7 +60,7 @@ class CompanyController {
       .catch(e => resError(res, e.message))
   }
 
-  // [POST] /company
+  // [POST] /companies
   async create(req, res) {
     await checkUserTypeRequest(req, res, next, ['EMPLOYER'])
     const creatorId = req.userRequest._id
@@ -76,7 +76,7 @@ class CompanyController {
       .catch(e => resError(res, e.message))
   }
 
-  // [GET] /company/:id
+  // [GET] /companies/:id
   async showDetail(req, res, next) {
     const companyId = req.params.id
     if (!companyId) {
@@ -94,7 +94,7 @@ class CompanyController {
       .catch(e => resError(res, e.message))
   }
 
-  // [GET] /company/:id/jobs
+  // [GET] /companies/:id/jobs
   async showListJob(req, res, next) {
     const companyId = req.params.id
     
