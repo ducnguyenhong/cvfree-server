@@ -1,182 +1,111 @@
 const CvModel = require("../models/CvModel");
-const jsonRes = require('../helper/json-response')
 const uuid = require('uuid');
 const UserModel = require("../models/UserModel");
+const resSuccess = require('../response/response-success')
+const resError = require('../response/response-error')
+const getPagingData = require('../helper/get-paging-data')
+const checkUserTypeRequest = require('../helper/check-user-type-request')
 class CvController {
 
   // [GET] /cvs
   async showList(req, res, next) {
-    const page = parseInt(req.query.page) || 1
-    const size = parseInt(req.query.size) || 10
-    const start = (page - 1) * size
-    const end = page * size
-    
+    await checkUserTypeRequest(req, res, next, ['ADMIN'])
+
     CvModel.find()
       .then(cvs => {
-        let totalPages = 0;
-        if (cvs.length <= size) {
-          totalPages = 1
-        }
-        if (cvs.length > size) {
-          totalPages = (cvs.length % size === 0) ? (cvs.length / size) : Math.ceil(cvs.length / size) + 1
-        }
-        const dataRes = cvs.slice(start, end).map(item => {
-          const { password, __v, ...userRes } = item._doc
+        const { dataPaging, pagination } = getPagingData(req, cvs)
+        const dataRes = dataPaging.map(item => {
+          const { password, ...userRes } = item
           return userRes
         })
-        return res.status(200).json(jsonRes.success(
-          200,
-          {
-            items: dataRes,
-            page,
-            size,
-            totalItems: cvs.length,
-            totalPages
-          },
-          "GET_DATA_SUCCESS"
-        ))
+        return resSuccess(res, {items: dataRes, pagination})
       })
-      .catch(e => {
-      return res.status(400).json(jsonRes.error(400, e.message))
-    })
+      .catch(e => resError(res, e.message))
   }
 
   // [GET] /cvs/my-cvs/suggest
   async showMyCvsSuggest(req, res, next) {
-    const page = parseInt(req.query.page) || 1
-    const size = parseInt(req.query.size) || 10
-    const start = (page - 1) * size
-    const end = page * size
+    await checkUserTypeRequest(req, res, next, ['USER'])
     const userId = req.userRequest._doc.id
 
     CvModel.find({userId, status: 'ACTIVE'}).exec()
       .then(cvs => {
-        let totalPages = 0;
-        if (cvs.length <= size) {
-          totalPages = 1
-        }
-        if (cvs.length > size) {
-          totalPages = (cvs.length % size === 0) ? (cvs.length / size) : Math.ceil(cvs.length / size) + 1
-        }
-        const dataRes = cvs.slice(start, end).map(item => {
-          const { _id, name, detail } = item._doc
+        const { dataPaging, pagination } = getPagingData(req, cvs)
+        const dataRes = dataPaging.map(item => {
+          const { _id, name, detail } = item
           return {
             value: _id,
             label: `${name} - ${detail.fullname}`.toUpperCase()
           }
         })
-        return res.status(200).json(jsonRes.success(
-          200,
-          {
-            items: dataRes,
-            page,
-            size,
-            totalItems: cvs.length,
-            totalPages
-          },
-          "GET_DATA_SUCCESS"
-        ))
+        return resSuccess(res, {items: dataRes, pagination})
       })
-      .catch(e => {
-      return res.status(400).json(jsonRes.error(400, e.message))
-    })
+      .catch(e => resError(res, e.message))
   }
 
-  // [GET] /cvs/my-cvs
+  // [GET] /cvs/my-cvs/:id
   async showMyCvs(req, res, next) {
-    const page = parseInt(req.query.page) || 1
-    const size = parseInt(req.query.size) || 10
-    const start = (page - 1) * size
-    const end = page * size
-    const userId = req.userRequest._doc.id
+    const userRequestId = req.params.id
+    const { _id, type } = req.userRequest._doc
+    await checkUserTypeRequest(req, res, next, ['USER', 'ADMIN'])
+    if (type === 'USER' && userRequestId !== _id.toString()) {
+      return resError(res, 'UNAUTHORIZED', 401)
+    }
 
-    CvModel.find({userId, status: 'ACTIVE'}).exec()
+    CvModel.find({userId: _id.toString(), status: 'ACTIVE'})
       .then(cvs => {
-        let totalPages = 0;
-        if (cvs.length <= size) {
-          totalPages = 1
-        }
-        if (cvs.length > size) {
-          totalPages = (cvs.length % size === 0) ? (cvs.length / size) : Math.ceil(cvs.length / size) + 1
-        }
-        const dataRes = cvs.slice(start, end).map(item => {
-          const { password, __v, ...userRes } = item._doc
+        const { dataPaging, pagination } = getPagingData(req, cvs)
+        const dataRes = dataPaging.map(item => {
+          const { password, ...userRes } = item
           return userRes
         })
-        return res.status(200).json(jsonRes.success(
-          200,
-          {
-            items: dataRes,
-            page,
-            size,
-            totalItems: cvs.length,
-            totalPages
-          },
-          "GET_DATA_SUCCESS"
-        ))
+        return resSuccess(res, {items: dataRes, pagination})
       })
-      .catch(e => {
-      return res.status(400).json(jsonRes.error(400, e.message))
-    })
+      .catch(e => resError(res, e.message))
   }
 
   // [GET] /cvs/:id
-  async showDetail(req, res, next) {
+  async showDetail(req, res) {
     const cvId = req.params.id
     CvModel.findOne({_id: cvId})
-      .then(cvDetail => {
-        const { password, __v, ...dataRes } = cvDetail._doc
-        return res.status(200).json(jsonRes.success(
-          200,
-          { cvDetail: dataRes },
-          "GET_DATA_SUCCESS"
-        ))
+      .then(cv => {
+        const { __v, ...dataRes } = cv._doc
+        return resSuccess(res, {cv: dataRes})
       })
-      .catch(e => {
-      return res.status(400).json(jsonRes.error(400, e.message))
-    })
+      .catch(e => resError(res, e.message))
   }
 
   // [POST] /cvs
   async create(req, res) {
-    const userId = req.userRequest._doc._id
-    const listCV = req.userRequest._doc.listCV
-    const newCv = new CvModel({...req.body, candidateId: uuid.v4()})
+    await checkUserTypeRequest(req, res, next, ['USER'])
+    const {_id, listCV} = req.userRequest._doc
+    const newCv = new CvModel({ ...req.body, candidateId: uuid.v4() })
+    
     newCv.save()
-      .then((cv) => {
+      .then(cv => {
         const cvId = cv._doc._id
-        UserModel.findOneAndUpdate({_id: userId}, {listCV: listCV && listCV.length > 0 ? [...listCV, cvId] : [cvId]})
-        res.status(201).json(jsonRes.success(201, { cvInfo: newCv }, "CREATED_CV_SUCCESS"))
+        UserModel.findOneAndUpdate({ _id }, { listCV: listCV && listCV.length > 0 ? [...listCV, cvId] : [cvId] })
+        resSuccess(res, {cvInfo: cv}, 'CREATED_CV_SUCCESS')
       })
-      .catch((e) => {
-        res.status(400).json(jsonRes.error(400, e.message))
-      })
+      .catch(e => resError(res, e.message))
   }
 
   // [PUT] /cvs
   async update(req, res) {
+    await checkUserTypeRequest(req, res, next, ['USER'])
     const cvId = req.params.id
     CvModel.findByIdAndUpdate(cvId, req.body)
-      .then(() => {
-        res.status(200).json(jsonRes.success(200, { cvInfo: req.body }, "UPDATED_CV_SUCCESS"))
-      })
-      .catch(e => {
-      return res.status(400).json(jsonRes.error(400, e.message))
-    })
-    
+      .then(cv => resSuccess(res, {cvInfo: cv}, 'UPDATED_CV_SUCCESS'))
+      .catch(e => resError(res, e.message))
   }
 
   // [DELETE] /cvs/:id
   async delete(req, res) {
+    await checkUserTypeRequest(req, res, next, ['USER'])
     const cvId = req.params.id
     CvModel.findOneAndUpdate(cvId, {status: 'INACTIVE'})
-      .then(() => {
-        res.status(200).json(jsonRes.success(200, null, "DELETED_CV_SUCCESS"))
-      })
-      .catch(e => {
-      return res.status(400).json(jsonRes.error(400, e.message))
-    })
-    
+      .then(() => resSuccess(res, null, 'DELETED_CV_SUCCESS'))
+      .catch(e => resError(res, e.message))
   }
 
 }

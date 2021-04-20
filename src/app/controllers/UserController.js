@@ -14,7 +14,7 @@ class UserController {
     for (const [key, value] of Object.entries(getQueryParams(req))) {
       if (key && value && key !== 'page' && key !== 'size') {
         if (key === 'keyword') {
-          objQuery.fullname = value
+          objQuery.fullname = new RegExp(value, "i")
         }
         else if (key === 'verify') {
           if (verify === 'true') {

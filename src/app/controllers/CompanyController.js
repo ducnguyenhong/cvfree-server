@@ -2,91 +2,55 @@ const CompanyModel = require("../models/CompanyModel");
 const jsonRes = require('../helper/json-response')
 const UserModel = require('../models/UserModel')
 const JobModel = require('../models/JobModel')
+const resSuccess = require('../response/response-success')
+const resError = require('../response/response-error')
+const getPagingData = require('../helper/get-paging-data')
+const checkUserTypeRequest = require('../helper/check-user-type-request')
+const getQueryParams = require('../helper/get-query-params')
 
 class CompanyController {
 
   // [GET] /company
   async showList(req, res, next) {
-    const page = parseInt(req.query.page) || 1
-    const size = parseInt(req.query.size) || 10
-    const start = (page - 1) * size
-    const end = page * size
-    
+    await checkUserTypeRequest(req, res, next, ['ADMIN'])
+
     CompanyModel.find()
       .then(companies => {
-        let totalPages = 0;
-        if (companies.length <= size) {
-          totalPages = 1
-        }
-        if (companies.length > size) {
-          totalPages = (companies.length % size === 0) ? (companies.length / size) : Math.ceil(companies.length / size) + 1
-        }
-        const dataRes = companies.slice(start, end).map(item => {
-          const { ...companyRes } = item._doc
-          return companyRes
-        })
-        return res.status(200).json(jsonRes.success(
-          200,
-          {
-            items: dataRes,
-            page,
-            size,
-            totalItems: companies.length,
-            totalPages
-          },
-          "GET_DATA_SUCCESS"
-        ))
+        const { dataPaging, pagination } = getPagingData(req, companies)
+        return resSuccess(res, {items: dataPaging, pagination})
       })
-      .catch(e => {
-      return res.status(400).json(jsonRes.error(400, e.message))
-    })
+      .catch(e => resError(res, e.message))
   }
 
   // [GET] /company/suggest
   async suggest(req, res, next) {
-    const page = parseInt(req.query.page) || 1
-    const size = parseInt(req.query.size) || 10
-    const start = (page - 1) * size
-    const end = page * size
+    await checkUserTypeRequest(req, res, next, ['EMPLOYER'])
+    const objQuery = {}
     const keyword = req.query.keyword
+    if (keyword) {
+      objQuery.name = new RegExp(keyword, "i")
+    }
     
-    CompanyModel.find()
+    CompanyModel.find(objQuery)
       .then(companies => {
-        let totalPages = 0;
-        if (companies.length <= size) {
-          totalPages = 1
-        }
-        if (companies.length > size) {
-          totalPages = (companies.length % size === 0) ? (companies.length / size) : Math.ceil(companies.length / size) + 1
-        }
-        const companySlice = companies.slice(start, end).map(item => {
-          const { ...companyRes } = item._doc
-          return companyRes
+        const { dataPaging, pagination } = getPagingData(req, companies)
+        const dataRes = dataPaging.map(item => {
+          return {value: item.id, label: item.name}
         })
-        let dataRes = []
-        if (keyword) {
-          dataRes = companySlice.map(item => {
-            if (`${item.name}`.includes(keyword)) {
-              return {value: item.id, label: item.name}
-            }
-          })
-        }
-        else {
-          dataRes = companySlice.map(item => {
-            return {value: item.id, label: item.name}
-          })
-        }
-        return res.status(200).json(jsonRes.success(
-          200,
-          {
-            items: dataRes,
-            page,
-            size,
-            totalItems: companies.length,
-            totalPages
-          },
-          "GET_DATA_SUCCESS"
-        ))
+        // let dataRes = []
+        // if (keyword) {
+        //   dataRes = companySlice.map(item => {
+        //     if (`${item.name}`.includes(keyword)) {
+        //       return {value: item.id, label: item.name}
+        //     }
+        //   })
+        // }
+        // else {
+        //   dataRes = companySlice.map(item => {
+        //     return {value: item.id, label: item.name}
+        //   })
+        // }
+        return resSuccess(res, {items: dataRes, pagination})
       })
       .catch(e => {
       return res.status(400).json(jsonRes.error(400, e.message))
@@ -116,6 +80,12 @@ class CompanyController {
   // [GET] /company/detail
   async showDetail(req, res, next) {
     const companyId = req.params.id
+    if (!companyId) {
+      return res.status(200).json(jsonRes.success(
+        200,
+        { companyDetail: null },
+        "NOT_EXISTS_COMPANY"))
+    }
     CompanyModel.findOne({_id: companyId})
       .then(companyDetail => {
         if (!companyDetail) {
