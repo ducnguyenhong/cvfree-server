@@ -1,4 +1,3 @@
-const jsonRes = require('../helper/json-response')
 const UserModel = require("../models/UserModel");
 const checkExistsData = require('../helper/check-exists-data')
 const USER_TYPE = require('../../constants/user-type')
@@ -6,6 +5,9 @@ const CONSTANTS = require('../../constants')
 const generateToken = require('../helper/generate-token')
 const moment = require('moment')
 const md5 = require('md5')
+const resSuccess = require('../response/response-success')
+const resError = require('../response/response-error')
+const sendEmail = require('../helper/send-email')
 
 const nodemailer = require('nodemailer');
 
@@ -20,16 +22,15 @@ const transporter = nodemailer.createTransport({
 class AuthController {
 
   // [POST] /auth/sign-in
-  async signIn(req, res, next) {
-    const username = req.body.username
-    const password = req.body.password
+  async signIn(req, res) {
+    const {username, password} = req.body
     if (!(await checkExistsData(UserModel, 'username', username)) || !(await checkExistsData(UserModel, 'password', password))) {
-      res.status(400).json(jsonRes.error(409, 'USERNAME_OR_PASSWORD_INCORRECT'))
-      return
+      return resError(res, 'USERNAME_OR_PASSWORD_INCORRECT', 409)
     }
+
     const user = await UserModel.findOne({ username })
     if (user && !user._doc.verify) {
-      res.status(400).json(jsonRes.error(409, 'ACCOUNT_NOT_VERIFY'))
+      return resError(res, 'ACCOUNT_NOT_VERIFY')
     }
     const accessTokenLife = CONSTANTS.accessTokenLife
     const accessTokenSecret = CONSTANTS.accessTokenSecret
@@ -46,12 +47,10 @@ class AuthController {
     );
 
     if (!accessToken) {
-      res.status(401).json(jsonRes.error(409, 'NETWORK_ERROR'))
-      return
+      return resError(res, 'CANNOT_GENERATE_TOKEN', 500)
     }
 
-    return res.status(200).json(jsonRes.success(
-      200,
+    return resSuccess(res,
       {
         userInfo: user,
         auth: {
@@ -59,28 +58,28 @@ class AuthController {
           expiredAt: moment().add(30, 'days').valueOf()
         }
       },
-      "LOGIN_SUCCESS"
-    ))
+      'LOGIN_SUCCESS'
+    )
   }
 
   // [POST] /auth/sign-up
   async signUp(req, res) {
-    const username = req.body.username
-    const email = req.body.email
-    const type = req.body.type
+    const {username, email, type} = req.body
+
+    const sendMailToUser = async (mailOptions) => {
+      return await sendEmail(mailOptions)
+    }
 
     if (await checkExistsData(UserModel, 'username', username)) {
-      res.status(409).json(jsonRes.error(409, 'USERNAME_ALREADY_EXISTS'))
-      return
+      return resError(res, 'USERNAME_ALREADY_EXISTS', 409)
     }
     if (await checkExistsData(UserModel, 'email', email)) {
-      res.status(409).json(jsonRes.error(409, 'EMAIL_ALREADY_EXISTS'))
-      return
+      return resError(res, 'EMAIL_ALREADY_EXISTS', 409)
     }
     if (!USER_TYPE.includes(type)) {
-      res.status(409).json(jsonRes.error(409, 'USER_TYPE_INVALID'))
-      return
+      return resError(res, 'USER_TYPE_INVALID', 409)
     }
+
     const newUser = new UserModel(req.body)
     newUser.save()
       .then(() => {
@@ -89,38 +88,34 @@ class AuthController {
           from: 'cvfreecontact@gmail.com',
           to: email,
           subject: 'CVFREE - Xác thực tài khoản',
-          text: `Xin chào ${username},
+          text: `Xin chào ${username}. Bạn vừa đăng ký một tài khoản mới tại CVFREE. Hãy nhấp vào liên kết sau để xác thực tài khoản của mình: ${verifyURL}
 
-            Bạn vừa đăng ký một tài khoản mới tại CVFREE.
-            Hãy nhấp vào liên kết sau để xác thực tài khoản của mình:
-            ${verifyURL}
-
-            Trân trọng,
-            CVFREE
-          `
+Trân trọng,
+CVFREE`
         };
 
-        transporter.sendMail(mailOptions, function(error, info){
-          if (error) {
-            return res.status(400).json(jsonRes.error(400, error))
-          } else {
-            return res.status(200).json(jsonRes.success(
-              200, null, "FORGOT_PASSWORD_SUCCESS"
-            ))
-          }
-        });
-        res.status(201).json(jsonRes.success(201, { userInfo: newUser }, "CREATED_ACCOUNT_SUCCESS"))
+        const resultSendEmailToUser = sendMailToUser(mailOptions)
+
+        if (resultSendEmailToUser.result) {
+          return resSuccess(res, { userInfo: newUser }, 'CREATED_ACCOUNT_SUCCESS', 201)
+        }
+        else {
+          return resError(res, resultSendEmailToUser.error)
+        }
       })
-      .catch((e) => {
-        res.status(400).json(jsonRes.error(400, e.message))
-      })
+      .catch(e => resError(res, e.message))
   }
 
   // [POST] /auth/forgot-password
-  async forgotPassword(req, res, next) {
-    const email = req.body.email
+  async forgotPassword(req, res) {
+    const { email } = req.body
+    
+    const sendMailToUser = async (mailOptions) => {
+      return await sendEmail(mailOptions)
+    }
+
     if (!(await (checkExistsData(UserModel, 'email', email)))) {
-      return res.status(400).json(jsonRes.error(409, 'EMAIL_INCORRECT'))
+      return resError(res, 'EMAIL_INCORRECT', 409)
     }
     let newPassword = ''
     const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
@@ -130,56 +125,40 @@ class AuthController {
 
     UserModel.findOneAndUpdate({ email }, { password: md5(newPassword) })
       .then(() => {
-        var mailOptions = {
+        const mailOptions = {
           from: 'cvfreecontact@gmail.com',
           to: email,
           subject: 'CVFREE - Quên mật khẩu',
-          text: `Xin chào ${email},
+          text: `Xin chào ${email}. Bạn vừa sử dụng chức năng quên mật khẩu tại CVFREE. Mật khẩu mới của bạn là: ${newPassword}
 
-            Bạn vừa sử dụng chức năng quên mật khẩu tại CVFREE.
-            Mật khẩu mới của bạn là: ${newPassword}
-
-            Trân trọng,
-            CVFREE
-          `
+Trân trọng,
+CVFREE`
         };
 
-        transporter.sendMail(mailOptions, function(error, info){
-          if (error) {
-            return res.status(400).json(jsonRes.error(400, error))
-          } else {
-            return res.status(200).json(jsonRes.success(
-              200, null, "FORGOT_PASSWORD_SUCCESS"
-            ))
-          }
-        });
+        const resultSendEmailToUser = sendMailToUser(mailOptions)
+
+        if (resultSendEmailToUser.result) {
+          return resSuccess(res, null, 'FORGOT_PASSWORD_SUCCESS')
+        }
+        else {
+          return resError(res, resultSendEmailToUser.error)
+        }
       })
-      .catch(e => {
-        console.log('ducnh8', e);
-        return res.status(400).json(jsonRes.error(400, e.message))
-      })
+      .catch(e => resError(res, e.message))
   }
 
   // [POST] /auth/verify/:id
-  async verify(req, res, next) {
+  async verify(req, res) {
     const userId = req.body.userId || ''
     const regexASCII = /^[a-zA-Z0-9]+$/
-    if (!regexASCII.test(userId)) {
-      return res.status(400).json(jsonRes.error(409, 'USER_NOT_EXISTS'))
-    }
-    if (!(await checkExistsData(UserModel, '_id', userId))) {
-      return res.status(400).json(jsonRes.error(409, 'USER_NOT_EXISTS'))
+
+    if (!regexASCII.test(userId) || !(await checkExistsData(UserModel, '_id', userId))) {
+      return resError(res, 'USER_NOT_EXISTS', 409)
     }
     
     UserModel.findOneAndUpdate({ _id: userId }, { verify: true })
-      .then(() => {
-        return res.status(200).json(jsonRes.success( 200, null, "VERIFY_SUCCESS"))
-      })
-      .catch((e) => {
-        return res.status(400).json(jsonRes.error(400, e.message))
-    })
-
-    
+      .then(() => resSuccess(res, null, 'VERIFY_SUCCESS'))
+      .catch(e => resError(res, e.message))
   }
 
 }

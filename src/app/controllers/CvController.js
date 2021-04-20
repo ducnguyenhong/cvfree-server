@@ -26,7 +26,7 @@ class CvController {
   // [GET] /cvs/my-cvs/suggest
   async showMyCvsSuggest(req, res, next) {
     await checkUserTypeRequest(req, res, next, ['USER'])
-    const userId = req.userRequest._doc.id
+    const userId = req.userRequest.id
 
     CvModel.find({userId, status: 'ACTIVE'}).exec()
       .then(cvs => {
@@ -46,7 +46,7 @@ class CvController {
   // [GET] /cvs/my-cvs/:id
   async showMyCvs(req, res, next) {
     const userRequestId = req.params.id
-    const { _id, type } = req.userRequest._doc
+    const { _id, type } = req.userRequest
     await checkUserTypeRequest(req, res, next, ['USER', 'ADMIN'])
     if (type === 'USER' && userRequestId !== _id.toString()) {
       return resError(res, 'UNAUTHORIZED', 401)
@@ -78,7 +78,7 @@ class CvController {
   // [POST] /cvs
   async create(req, res) {
     await checkUserTypeRequest(req, res, next, ['USER'])
-    const {_id, listCV} = req.userRequest._doc
+    const {_id, listCV} = req.userRequest
     const newCv = new CvModel({ ...req.body, candidateId: uuid.v4() })
     
     newCv.save()

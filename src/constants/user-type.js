@@ -1,3 +1,3 @@
-const USER_TYPE = ['USER', 'ADMIN', 'EMPLOYER']
+const USER_TYPE = ['USER', 'EMPLOYER']
 
 module.exports = USER_TYPE

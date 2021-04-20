@@ -17,7 +17,7 @@ class JobController {
   async showListJobOfEmployer(req, res, next) {
     await checkUserTypeRequest(req, res, next, ['ADMIN', 'EMPLOYER'])
     const employerId = req.params.id
-    const { _id, type } = req.userRequest._doc
+    const { _id, type } = req.userRequest
     if (type === 'EMPLOYER' && employerId !== _id.toString()) {
       return resError(res, 'UNAUTHORIZED', 401)
     }
@@ -46,7 +46,7 @@ class JobController {
 
   // [POST] /jobs
   async create(req, res) {
-    const { _id, type, companyId } = req.userRequest._doc
+    const { _id, type, companyId } = req.userRequest
     if (type !== 'EMPLOYER') {
       return resError(res, 'UNAUTHORIZED', 401)
     }
@@ -105,7 +105,7 @@ class JobController {
   async candidateApply(req, res, next) {
     const jobId = req.params.id
     const cvId = req.body.cvId
-    const { type, _id: userId } = req.userRequest._doc
+    const { type, _id: userId } = req.userRequest
     
     if (type !== 'USER') {
       return resError(res, 'UNAUTHORIZED', 401)

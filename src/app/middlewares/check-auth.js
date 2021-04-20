@@ -19,7 +19,7 @@ const authMDW = async (req, res, next) => {
   }
 
 	const user = await UserModel.findOne({username: verified.payload.username});
-  req.userRequest = user
+  req.userRequest = user._doc
   next()
 };
 

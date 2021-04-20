@@ -11,7 +11,7 @@ class EmployerController {
   // [POST] /employer/unlock-candidate
   async unlockCandidate(req, res, next) {
     await checkUserTypeRequest(req, res, next, ['EMPLOYER'])
-    const userId = req.userRequest._doc.id
+    const userId = req.userRequest.id
     const candidateId = req.body.id
 
     UserModel.findOne({ id: userId})
@@ -83,7 +83,7 @@ class EmployerController {
   // [POST] /employer/accept-candidate
   async acceptCandidate(req, res, next) {
     await checkUserTypeRequest(req, res, next, ['EMPLOYER'])
-    const employer = req.userRequest._doc
+    const employer = req.userRequest
     if (!employer) {
       return resError(res, 'NOT_EXISTS_EMPLOYER')
     }
@@ -143,7 +143,7 @@ class EmployerController {
 
   // [POST] /employer/reject-candidate
   async rejectCandidate(req, res, next) {
-    const employer = req.userRequest._doc
+    const employer = req.userRequest
     if (!employer) {
       return resError(res, 'NOT_EXISTS_EMPLOYER')
     }

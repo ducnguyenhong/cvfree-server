@@ -10,7 +10,6 @@ const transporter = nodemailer.createTransport({
 
 const sendEmail = async (mailOptions) => {
   return await transporter.sendMail(mailOptions, (error, info) => {
-    console.log('ducnh1', info);
     if (!error) {
       return {
         result: true,

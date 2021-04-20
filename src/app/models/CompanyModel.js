@@ -3,7 +3,7 @@ const autoIncrement = require('mongoose-auto-increment')
 const Schema = mongoose.Schema
 
 const Company = new Schema({
-  creatorId: {type: Number, required: true},
+  creatorId: {type: String, required: true},
   name: { type: String, required: true },
   taxCode: String,
   address: {

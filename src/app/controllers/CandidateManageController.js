@@ -1,56 +1,27 @@
 const CandidateManageModel = require('../models/CandidateManageModel')
-const jsonRes = require('../helper/json-response')
+const resSuccess = require('../response/response-success')
+const resError = require('../response/response-error')
+const getPagingData = require('../helper/get-paging-data')
+const checkUserTypeRequest = require('../helper/check-user-type-request')
 
-class CandidateController {
+class CandidateManageController {
   // [GET] /candidate-manage
   async showListCandidateManage(req, res, next) {
-    const page = parseInt(req.query.page) || 1
-    const size = parseInt(req.query.size) || 10
-    const start = (page - 1) * size
-    const end = page * size
-    const userId = req.userRequest._doc._id
+    await checkUserTypeRequest(req, res, next, ['EMPLOYER'])
+    const {_id} = req.userRequest
   
-    CandidateManageModel.findOne({employerId: userId})
+    CandidateManageModel.findOne({employerId: _id})
       .then(candidateManage => {
         if (!candidateManage) {
-          return res.status(200).json(jsonRes.success(
-            200,
-            {
-              items: [],
-              page,
-              size,
-              totalItems: 0,
-              totalPages: 0
-            },
-            "GET_DATA_SUCCESS"
-          ))
+          return resSuccess(res, {item: [], pagination: {page: 1, size: 10, totalPages: 0, totalItems: 0}})
         }
-        const data = candidateManage.candidates || []
-        let totalPages = 0;
-        if (data.length <= size) {
-          totalPages = 1
-        }
-        if (data.length > size) {
-          totalPages = (data.length % size === 0) ? (data.length / size) : Math.ceil(data.length / size) + 1
-        }
-        const dataRes = data.slice(start, end)
+        const datas = candidateManage.candidates || []
+        const { dataPaging, pagination } = getPagingData(req, datas)
         
-        return res.status(200).json(jsonRes.success(
-          200,
-          {
-            items: dataRes,
-            page,
-            size,
-            totalItems: data.length,
-            totalPages
-          },
-          "GET_DATA_SUCCESS"
-        ))
+        return resSuccess(res, {items: dataPaging, pagination})
       })
-      .catch(e => {
-        return res.status(400).json(jsonRes.error(400, e.message))
-      })
+      .catch(e => resError(res, e.message))
   }
 }
 
-module.exports = new CandidateController();
+module.exports = new CandidateManageController();

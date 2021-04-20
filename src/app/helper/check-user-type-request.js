@@ -1,7 +1,7 @@
 const resError = require('../response/response-error')
 
 const checkUserTypeRequest = (req, res, next, validType) => {
-  const userType = req.userRequest._doc.type
+  const userType = req.userRequest.type
   let check = false
   for (let i = 0; i < validType.length; i++){
     if (`${validType[i]}`.includes(userType)) {
