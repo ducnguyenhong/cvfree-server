@@ -3,7 +3,12 @@ const autoIncrement = require('mongoose-auto-increment')
 const Schema = mongoose.Schema
 
 const Cv = new Schema({
-  userId: {type: String, required: true},
+  creator: {
+    id: String,
+    avatar: String,
+    fullname: String,
+    username: String
+  },
   color: { type: String, maxlength: 10, required: true },
   template: { type: String, maxlength: 20, required: true },
   fontSize: { type: String, maxlength: 10, required: true },

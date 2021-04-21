@@ -70,7 +70,7 @@ class CvController {
     CvModel.findOne({_id: cvId})
       .then(cv => {
         const { __v, ...dataRes } = cv._doc
-        return resSuccess(res, {cv: dataRes})
+        return resSuccess(res, {cvDetail: dataRes})
       })
       .catch(e => resError(res, e.message))
   }
@@ -78,8 +78,8 @@ class CvController {
   // [POST] /cvs
   async create(req, res) {
     await checkUserTypeRequest(req, res, next, ['USER'])
-    const {_id, listCV} = req.userRequest
-    const newCv = new CvModel({ ...req.body, candidateId: uuid.v4() })
+    const {_id, listCV, fullname, avatar, username} = req.userRequest
+    const newCv = new CvModel({ ...req.body, creator: {id: _id, fullname, avatar, username}, candidateId: uuid.v4() })
     
     newCv.save()
       .then(cv => {
