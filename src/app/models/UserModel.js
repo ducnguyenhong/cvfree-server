@@ -8,7 +8,7 @@ const User = new Schema({
   deviceId: { type: String, maxlength: 50 },
   email: { type: String, maxlength: 30, required: true },
   address: { type: String, maxlength: 255 },
-  birthday: { type: Number },
+  birthday: { type: Date },
   verify: {type: Boolean},
   coin: { type: Number },
   companyId: { type: String },
