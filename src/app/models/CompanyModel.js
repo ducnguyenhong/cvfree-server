@@ -7,6 +7,7 @@ const Company = new Schema({
   name: { type: String, required: true },
   taxCode: String,
   email: String,
+  logoId: String,
   phone: String,
   address: {
     value: { district: String, city: String },
@@ -16,6 +17,7 @@ const Company = new Schema({
   website: String,
   personnelSize: String,
   background: String,
+  backgroundId: String,
   intro: String,
   logo: String,
   status: String

@@ -7,7 +7,13 @@ const User = new Schema({
   password: { type: String, maxlength: 50, required: true },
   deviceId: { type: String, maxlength: 50 },
   email: { type: String, maxlength: 30, required: true },
-  address: { type: String, maxlength: 255 },
+  address: {
+    value: {
+      city: { type: String },
+      district: {type: String}
+    },
+    label: String
+  },
   birthday: { type: Date },
   verify: {type: Boolean},
   coin: { type: Number },
@@ -20,6 +26,7 @@ const User = new Schema({
   status: { type: String, maxlength: 10 },
   type: { type: String, maxlength: 15, required: true },
   avatar: { type: String, maxlength: 255 },
+  avatarId: String,
   seeCV: { type: Boolean },
   findJob: { type: Boolean },
   listCV: [{type: String}],

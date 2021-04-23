@@ -4,6 +4,7 @@ const resError = require('../response/response-error')
 const getPagingData = require('../helper/get-paging-data')
 const checkUserTypeRequest = require('../helper/check-user-type-request')
 const getQueryParams = require('../helper/get-query-params')
+const checkExistsData = require('../helper/check-exists-data')
 class UserController {
 
   // [GET] /users
@@ -53,6 +54,31 @@ class UserController {
       .then(user => {
         const { password, _id, __v, ...dataRes } = user._doc
         return resSuccess(res, {user: dataRes})
+      })
+      .catch(e => resError(res, e.message))
+  }
+
+  // [PUT] /users/:id
+  async update(req, res) {
+    const { _id } = req.userRequest
+    const { id } = req.params
+    if (id !== _id.toString()) {
+      return resError(res, 'UNAUTHORIZED', 401)
+    }
+    const { fullname, email, phone, avatar, address, gender, birthday, avatarId } = req.body
+
+    if (!(await checkExistsData(UserModel, 'phone', phone))) {
+      resError(res, 'EXISTS_PHONE', 409)
+    }
+
+    if (!(await checkExistsData(UserModel, 'email', email))) {
+      resError(res, 'EXISTS_EMAIL', 409)
+    }
+    
+    UserModel.findOneAndUpdate({_id}, {fullname, email, phone, avatar, address, gender, birthday, avatarId}, {new: true})
+      .then(user => {
+        const { password, __v, ...dataRes } = user._doc
+        return resSuccess(res, {userDetail: dataRes}, 'UPDATED_USER_INFO')
       })
       .catch(e => resError(res, e.message))
   }
