@@ -1,6 +1,6 @@
 const getQueryParams = require('./get-query-params')
 
-const getPagingData = (req, data) => {
+const getPagingData = (req, data, no_doc) => {
   const { page, size } = getQueryParams(req)
   const start = (page - 1) * size
   const end = page * size
@@ -14,7 +14,7 @@ const getPagingData = (req, data) => {
   }
 
   const dataRes = data.slice(start, end).map(item => {
-    const { __v, ...data } = item._doc
+    const { __v, ...data } = no_doc ? item : item._doc
     return data
   })
 

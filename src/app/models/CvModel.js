@@ -3,8 +3,8 @@ const autoIncrement = require('mongoose-auto-increment')
 const Schema = mongoose.Schema
 
 const Cv = new Schema({
+  creatorId: String,
   creator: {
-    id: String,
     avatar: String,
     fullname: String,
     username: String

@@ -44,10 +44,31 @@ class CandidateController {
   async showListCandidateInfos(req, res, next) {
     await checkUserTypeRequest(req, res, next, ['EMPLOYER'])
     const userId = req.userRequest._id.toString()
+    const {ids, jobId} = req.params
+
+    const queryCandidateAppliedJob = async () => {
+      return JobModel.findOne({ _id: jobId })
+        .then(job => {
+          const { candidateApplied } = job._doc
+          return candidateApplied
+        })
+        .catch(e => resError(res, e.message))
+    }
 
     const queryCandidate = async () => {
       let dataRes = []
+      const candidateApplied = await queryCandidateAppliedJob()
+
       for (let i = 0; i <= listCandidate.length; i++) {
+        let candidateI = null
+        if (candidateApplied && candidateApplied.length > 0) {
+          for (let j = 0; j < candidateApplied.length; j++){
+            if (candidateApplied[j]._doc.cvId === listCandidate[i]) {
+              candidateI = candidateApplied[j]
+            }
+          }
+        }
+        
         await CvModel.findOne({ _id: listCandidate[i] })
           .then(candidate => {
             if (candidate) {
@@ -57,12 +78,13 @@ class CandidateController {
                 avatar,
                 fullname,
                 gender,
-                cvId: _id
+                cvId: _id,
+                appliedAt: candidateI ? candidateI.appliedAt : null
               })
             }
           })
           .catch(e => resError(res, e.message))
-      }
+        }
       return dataRes
     }
 
@@ -79,7 +101,7 @@ class CandidateController {
     }
 
     let listCandidate = null
-    const {ids, jobId} = req.params
+    
     if (ids) {
       listCandidate = ids.split(',')
     }
@@ -95,8 +117,7 @@ class CandidateController {
     }
 
     const dataRes = await queryCandidate()
-    const { dataPaging, pagination } = getPagingData(req, dataRes)
-
+    const { dataPaging, pagination } = getPagingData(req, dataRes, true)
     return resSuccess(res, {items: dataPaging, pagination})
   }
 

@@ -17,6 +17,7 @@ const User = new Schema({
   birthday: { type: Date },
   verify: {type: Boolean},
   coin: { type: Number },
+  numberOfCreateCv: Number,
   companyId: { type: String },
   country: { type: String, maxlength: 255 },
   fullname: { type: String, maxlength: 255 },

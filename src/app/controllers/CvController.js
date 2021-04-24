@@ -25,10 +25,10 @@ class CvController {
 
   // [GET] /cvs/my-cvs/suggest
   async showMyCvsSuggest(req, res, next) {
+    const { _id } = req.userRequest
     await checkUserTypeRequest(req, res, next, ['USER'])
-    const userId = req.userRequest.id
 
-    CvModel.find({userId, status: 'ACTIVE'}).exec()
+    CvModel.find({creatorId: _id.toString(), status: 'ACTIVE'})
       .then(cvs => {
         const { dataPaging, pagination } = getPagingData(req, cvs)
         const dataRes = dataPaging.map(item => {
@@ -45,14 +45,14 @@ class CvController {
 
   // [GET] /cvs/my-cvs/:id
   async showMyCvs(req, res, next) {
-    const userRequestId = req.params.id
+    const creatorId = req.params.id
     const { _id, type } = req.userRequest
-    await checkUserTypeRequest(req, res, next, ['USER', 'ADMIN'])
-    if (type === 'USER' && userRequestId !== _id.toString()) {
+    await checkUserTypeRequest(req, res, next, ['USER'])
+    if (type === 'USER' && creatorId !== _id.toString()) {
       return resError(res, 'UNAUTHORIZED', 401)
     }
 
-    CvModel.find({userId: _id.toString(), status: 'ACTIVE'})
+    CvModel.find({creatorId: _id.toString(), status: 'ACTIVE'})
       .then(cvs => {
         const { dataPaging, pagination } = getPagingData(req, cvs)
         const dataRes = dataPaging.map(item => {
@@ -78,13 +78,18 @@ class CvController {
   // [POST] /cvs
   async create(req, res) {
     await checkUserTypeRequest(req, res, next, ['USER'])
-    const {_id, listCV, fullname, avatar, username} = req.userRequest
-    const newCv = new CvModel({ ...req.body, creator: {id: _id, fullname, avatar, username}, candidateId: uuid.v4() })
+    const { _id, listCV, fullname, avatar, username, numberOfCreateCv } = req.userRequest
+    
+    if (numberOfCreateCv === 0) {
+      return resError(res, 'OUT_OF_TURN_CREATE')
+    }
+
+    const newCv = new CvModel({ ...req.body, creatorId: _id, creator: {fullname, avatar, username}, candidateId: uuid.v4() })
     
     newCv.save()
       .then(cv => {
         const cvId = cv._doc._id
-        UserModel.findOneAndUpdate({ _id }, { listCV: listCV && listCV.length > 0 ? [...listCV, cvId] : [cvId] })
+        UserModel.findOneAndUpdate({ _id }, { listCV: listCV && listCV.length > 0 ? [...listCV, cvId] : [cvId], numberOfCreateCv: numberOfCreateCv - 1 })
         resSuccess(res, {cvInfo: cv}, 'CREATED_CV_SUCCESS')
       })
       .catch(e => resError(res, e.message))
@@ -100,11 +105,19 @@ class CvController {
   }
 
   // [DELETE] /cvs/:id
-  async delete(req, res) {
+  async delete(req, res, next) {
     await checkUserTypeRequest(req, res, next, ['USER'])
     const cvId = req.params.id
-    CvModel.findOneAndUpdate(cvId, {status: 'INACTIVE'})
-      .then(() => resSuccess(res, null, 'DELETED_CV_SUCCESS'))
+    const { numberOfCreateCv, _id } = req.userRequest
+    
+    CvModel.findOneAndUpdate({_id: cvId}, {status: 'INACTIVE'})
+      .then(() => {
+        UserModel.findOneAndUpdate({ _id }, { numberOfCreateCv: numberOfCreateCv + 1 }, {new: true})
+          .then(user => {
+            resSuccess(res, {userInfo: user}, 'DELETED_CV_SUCCESS')
+          })
+          .catch(e => resError(res, e.message))
+      })
       .catch(e => resError(res, e.message))
   }
 

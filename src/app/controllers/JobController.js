@@ -39,7 +39,15 @@ class JobController {
     
     JobModel.find({creatorId: _id, status: 'ACTIVE'})
       .then(jobs => {
-        const { dataPaging, pagination } = getPagingData(req, jobs)
+        const transformData = jobs.map(item => {
+          const { candidateApplied, ...data } = item._doc
+          let newCandidateApplied = []
+          for (let i = 0; i < candidateApplied.length; i++){
+            newCandidateApplied.push(candidateApplied[i].cvId)
+          }
+          return {...data, candidateApplied: newCandidateApplied}
+        })
+        const { dataPaging, pagination } = getPagingData(req, transformData, true)
         return resSuccess(res, {items: dataPaging, pagination})
       })
       .catch(e => resError(res, e.message))
@@ -94,14 +102,14 @@ class JobController {
           return resSuccess(res, { jobDetail: null }, 'NOT_EXISTS_JOB')
         }
 
-        const { candidateApplied, companyId, ...dataRes } = job._doc
+        const { candidateApplied, company, ...dataRes } = job._doc
 
-        CompanyModel.findOne({ _id: companyId })
+        CompanyModel.findOne({ _id: company.id })
           .then(company => {
             const jobDetail = {
               ...dataRes,
               company: {
-                id: companyId,
+                id: company.id,
                 name: company.name,
                 logo: company.logo
               }
@@ -154,16 +162,19 @@ class JobController {
             }
             const { candidateApplied, creatorId, name } = job._doc
 
-            JobModel.findOneAndUpdate({ _id: jobId }, { candidateApplied: [...candidateApplied, {cvId}] })
+            JobModel.findOneAndUpdate({ _id: jobId }, { candidateApplied: [...candidateApplied, {cvId, appliedAt: new Date()}] })
               .then(() => {
-                UserModel.findOne({ id: creatorId })
+                UserModel.findOne({ _id: creatorId })
                   .then(creator => {
                     const { email, fullname } = creator._doc
                     const  mailOptions = {
                       from: 'cvfreecontact@gmail.com',
                       to: email,
                       subject: 'CVFREE - Ứng viên mới ứng tuyển',
-                      text: `Xin chào ${fullname}. Một ứng viên vừa ứng tuyển vào công việc "${name}" mà bạn đã đăng tuyển. Hãy đăng nhập vào CVFREE để xem chi tiết thông tin. (${Constants.clientURL}/sign-in)
+                      text: `Xin chào ${fullname}.
+
+Một ứng viên vừa ứng tuyển vào công việc "${name}" mà bạn đã đăng tuyển.
+Hãy đăng nhập vào CVFREE để xem chi tiết thông tin. (${Constants.clientURL}/sign-in)
 
 Trân trọng,
 CVFREE`

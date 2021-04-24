@@ -3,8 +3,8 @@ const autoIncrement = require('mongoose-auto-increment')
 const Schema = mongoose.Schema
 
 const Job = new Schema({
+  creatorId: String,
   creator: {
-    id: String,
     fullname: String,
     avatar: String
   },
@@ -35,7 +35,7 @@ const Job = new Schema({
   benefitToEnjoy: String,
   candidateApplied: [{
     cvId: String,
-    accept: Boolean
+    appliedAt: Date
   }],
   status: String
 }, { timestamps: true }) // auto generate createdAt, updatedAt

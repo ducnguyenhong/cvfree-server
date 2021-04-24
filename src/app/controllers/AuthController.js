@@ -80,7 +80,18 @@ class AuthController {
       return resError(res, 'USER_TYPE_INVALID', 409)
     }
 
-    const newUser = new UserModel(req.body)
+    let bonusData = {}
+    if (type === 'USER') {
+      bonusData = {numberOfCreateCv: 3}
+    }
+    if (type === 'EMPLOYER') {
+      bonusData = {
+        numberOfCandidateOpening: 3,
+        numberOfPosting: 3
+      }
+    }
+
+    const newUser = new UserModel({...req.body, ...bonusData})
     newUser.save()
       .then(() => {
         const verifyURL = `http://localhost:1112/verify-account/${Buffer.from(`${newUser._id}`).toString('base64')}`
