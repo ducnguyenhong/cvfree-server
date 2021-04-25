@@ -68,9 +68,9 @@ class JobController {
   }
 
   // [POST] /jobs
-  async create(req, res) {
+  async create(req, res, next) {
     await checkUserTypeRequest(req, res, next, ['EMPLOYER'])
-    const { _id, companyId, avatar, fullname } = req.userRequest
+    const { _id, companyId, avatar, fullname, numberOfPosting } = req.userRequest
 
     CompanyModel.findOne({ _id: companyId })
       .then(company => {
@@ -78,10 +78,68 @@ class JobController {
         const newJob = new JobModel({
           ...req.body,
           company: { logo, name, id: companyId },
-          creator: { id: _id, avatar, fullname}
+          creator: { avatar, fullname },
+          creatorId: _id
         })
         newJob.save()
-          .then(() => resSuccess(res, {jobInfo: newJob}, 'CREATED_JOB_SUCCESS'))
+          .then(() => {
+            UserModel.findOneAndUpdate({ _id }, { numberOfPosting: numberOfPosting - 1 })
+              .then(() => resSuccess(res, {jobInfo: newJob}, 'CREATED_JOB_SUCCESS'))
+              .catch(e => resError(res, e.message))
+          })
+          .catch(e => resError(res, e.message))
+      })
+      .catch(e => resError(res, e.message))
+  }
+
+  // [PUT] /jobs/:id
+  async update(req, res, next) {
+    await checkUserTypeRequest(req, res, next, ['EMPLOYER'])
+    const jobId = req.params.id
+    const userId = req.userRequest._id
+
+    JobModel.findOne({ _id: jobId })
+      .then(job => {
+        if (!job) {
+          resError(res, 'NOT_EXISTS_JOB')
+        }
+        const { creatorId } = job._doc
+        if (creatorId !== userId.toString()) {
+          return resError(res, 'UNAUTHORIZED', 401)
+        }
+
+        JobModel.findOneAndUpdate({ _id: jobId }, { ...req.body }, {new: true})
+          .then(job => resSuccess(res, { jobDetail: job }, 'UPDATED_JOB_SUCCESS'))
+          .catch(e => resError(res, e.message))
+      })
+      .catch(e => resError(res, e.message))
+  }
+
+  // [DELETE] /jobs/:id
+  async delete(req, res, next) {
+    await checkUserTypeRequest(req, res, next, ['EMPLOYER'])
+    const jobId = req.params.id
+    const userId = req.userRequest._id
+    const numberOfPosting = req.userRequest.numberOfPosting
+
+    JobModel.findOne({ _id: jobId })
+      .then(job => {
+        if (!job) {
+          resError(res, 'NOT_EXISTS_JOB')
+        }
+        const { creatorId } = job._doc
+        if (creatorId !== userId.toString()) {
+          return resError(res, 'UNAUTHORIZED', 401)
+        }
+
+        JobModel.findOneAndUpdate({ _id: jobId }, { status: 'INACTIVE'})
+          .then(job => {
+            UserModel.findOneAndUpdate({ _id: userId }, { numberOfPosting: numberOfPosting + 1 })
+              .then(() => {
+                resSuccess(res, { jobDetail: job }, 'DELETED_JOB_SUCCESS')
+              })
+              .catch(e => resError(res, e.message))
+          })
           .catch(e => resError(res, e.message))
       })
       .catch(e => resError(res, e.message))

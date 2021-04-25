@@ -28,12 +28,12 @@ const Cv = new Schema({
   categoryCV: [{
     name: { type: String }
   }],
+  candidateId: { type: String },
   detail: {
     type: {
       fullname: {type: String, required: true},
       avatar: { type: String },
       avatarId: String,
-      candidateId: { type: String },
       applyPosition: { type: String },
       birthday: { type: Number },
       gender: {type: String},

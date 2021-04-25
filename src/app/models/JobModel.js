@@ -15,9 +15,12 @@ const Job = new Schema({
     id: String
   },
   address: {
-    value: { district: String, city: String },
+    value: {
+      city: { type: String },
+      district: {type: String}
+    },
     label: String
-  } | null,
+  },
   career: [{ type: String}],
   recruitmentPosition: [{ type: String}],
   timeToApply: {type: Number},

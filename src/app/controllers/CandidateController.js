@@ -79,7 +79,8 @@ class CandidateController {
                 fullname,
                 gender,
                 cvId: _id,
-                appliedAt: candidateI ? candidateI.appliedAt : null
+                appliedAt: candidateI ? candidateI.appliedAt : null,
+                jobId
               })
             }
           })

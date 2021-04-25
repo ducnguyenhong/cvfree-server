@@ -9,7 +9,21 @@ const CandidateManage = new Schema({
       jobId: String,
       jobName: String,
       cvId: String,
-      candidateFullname: String,
+      candidate: {
+        candidateId: String,
+        fullname: String,
+        avatar: String,
+        gender: String,
+        email: String,
+        phone: String,
+        address: {
+          value: {
+            city: { type: String },
+            district: {type: String}
+          },
+          label: String
+        } | null | undefined,
+      },
       isDone: Boolean,
       candidateId: String,
       createdAt: Date

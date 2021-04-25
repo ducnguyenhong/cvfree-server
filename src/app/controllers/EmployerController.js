@@ -5,6 +5,8 @@ const CandidateManageModel = require('../models/CandidateManageModel')
 const resSuccess = require('../response/response-success')
 const resError = require('../response/response-error')
 const checkUserTypeRequest = require('../helper/check-user-type-request')
+const sendEmail = require('../helper/send-email')
+const Constants = require('../../constants')
 
 class EmployerController {
 
@@ -87,6 +89,9 @@ class EmployerController {
     if (!employer) {
       return resError(res, 'NOT_EXISTS_EMPLOYER')
     }
+    const sendMailToUser = async (mailOptions) => {
+      return await sendEmail(mailOptions).result
+    }
     const { jobId, cvId } = req.body
     CvModel.findOne({ _id: cvId })
       .then(cv => {
@@ -100,19 +105,33 @@ class EmployerController {
           }
           const { candidateApplied } = job._doc
           let newCandidateApplied = [...candidateApplied]
-          newCandidateApplied = newCandidateApplied.filter(item => item.cvId !== cvId)
+          newCandidateApplied = newCandidateApplied.filter(item => item._doc.cvId !== cvId)
 
           CandidateManageModel.findOne({ employerId: employer._id })
             .then(candidateManage => {
+              const {fullname, avatar, gender, phone, email, address} = cv._doc.detail
               const newData = {
                 cvId,
-                candidateId: cv._doc.candidateId,
-                candidateFullname: cv._doc.detail.fullname,
+                candidate: {candidateId: cv._doc.candidateId, fullname, avatar, gender, phone, email, address},
                 jobId,
                 jobName: job._doc.name,
                 isDone: false,
                 createdAt: new Date()
               }
+
+              const mailOptions = {
+                from: 'cvfreecontact@gmail.com',
+                to: cv._doc.detail.email,
+                subject: 'CVFREE - Ứng viên mới ứng tuyển',
+                text: `Xin chào ${`${cv._doc.detail.fullname}`.toLowerCase()}.
+
+Nhà tuyển dụng đã chấp nhận hồ sơ của bạn về việc làm "${job._doc.name}" mà bạn đã ứng tuyển.
+Nhà tuyển dụng sẽ sớm liên lạc với bạn qua thông tin liên hệ trong CV.
+Hãy đăng nhập vào CVFREE để xem chi tiết thông tin. (${Constants.clientURL}/sign-in)
+
+Trân trọng,
+CVFREE`
+              };
 
               if (!candidateManage) {
                 const newCandidateManage = new CandidateManageModel({
@@ -121,16 +140,32 @@ class EmployerController {
                 })
                 newCandidateManage.save()
                   .then(() => {
-                    JobModel.findOneAndUpdate({ _id: jobId }, { candidateApplied: newCandidateApplied })
+                    const resultSendEmailToUser = sendMailToUser(mailOptions)
+                    if (resultSendEmailToUser) {
+                      JobModel.findOneAndUpdate({ _id: jobId }, { candidateApplied: newCandidateApplied })
                       .then(() => resSuccess(res, null, 'ACCEPTED_CANDIDATE_SUCCESS'))
                       .catch(e => resError(res, e.message))
+                    }
+                    else {
+                      return resError(res, 'ERROR_SEND_EMAIL_TO_USER')
+                    }
                   })
                   .catch(e => resError(res, e.message))
               }
               else {
                 const { candidates } = candidateManage._doc
                 CandidateManageModel.findOneAndUpdate({ employerId: employer._id }, { candidates: [...candidates, newData] })
-                  .then(() => resSuccess(res, null, 'ACCEPTED_CANDIDATE_SUCCESS'))
+                  .then(() => {
+                    const resultSendEmailToUser = sendMailToUser(mailOptions)
+                    if (resultSendEmailToUser) {
+                      JobModel.findOneAndUpdate({ _id: jobId }, { candidateApplied: newCandidateApplied })
+                      .then(() => resSuccess(res, null, 'ACCEPTED_CANDIDATE_SUCCESS'))
+                      .catch(e => resError(res, e.message))
+                    }
+                    else {
+                      return resError(res, 'ERROR_SEND_EMAIL_TO_USER')
+                    }
+                  })
                   .catch(e => resError(res, e.message))
               }
               })
@@ -147,19 +182,50 @@ class EmployerController {
     if (!employer) {
       return resError(res, 'NOT_EXISTS_EMPLOYER')
     }
+    const sendMailToUser = async (mailOptions) => {
+      return await sendEmail(mailOptions).result
+    }
     const { jobId, cvId } = req.body
-    JobModel.findOne({ _id: jobId })
-      .then(job => {
-        if (!job) {
-          return resError(res, 'NOT_EXISTS_JOB')
+
+    CvModel.findOne({_id: cvId})
+      .then(cv => {
+        if (!cv) {
+          return resError(res, 'NOT_EXISTS_CV')
         }
-        const { candidateApplied } = job._doc
-        let newCandidateApplied = [...candidateApplied]
-        newCandidateApplied = newCandidateApplied.filter(item => item.cvId !== cvId)
-        JobModel.findOneAndUpdate({ _id: jobId }, { candidateApplied: newCandidateApplied })
-          .then(() => resSuccess(res, null, 'REJECTED_CANDIDATE_SUCCESS'))
+
+        JobModel.findOne({ _id: jobId })
+          .then(job => {
+            if (!job) {
+              return resError(res, 'NOT_EXISTS_JOB')
+            }
+            const mailOptions = {
+              from: 'cvfreecontact@gmail.com',
+              to: cv._doc.detail.email,
+              subject: 'CVFREE - Ứng viên mới ứng tuyển',
+              text: `Xin chào ${`${cv._doc.detail.fullname}`.toLowerCase()}.
+
+Nhà tuyển dụng đã từ chối hồ sơ của bạn về việc làm "${job._doc.name}" mà bạn đã ứng tuyển.
+Hãy thử tìm công việc phù hợp hơn tại CVFREE. (${Constants.clientURL}/jobs)
+
+Trân trọng,
+CVFREE`
+            };
+            const { candidateApplied } = job._doc
+            let newCandidateApplied = [...candidateApplied]
+            newCandidateApplied = newCandidateApplied.filter(item => item._doc.cvId !== cvId)
+
+            const resultSendEmailToUser = sendMailToUser(mailOptions)
+            if (resultSendEmailToUser) {
+              JobModel.findOneAndUpdate({ _id: jobId }, { candidateApplied: newCandidateApplied })
+              .then(() => resSuccess(res, null, 'REJECTED_CANDIDATE_SUCCESS'))
+              .catch(e => resError(res, e.message))
+            }
+            else {
+              return resError(res, 'ERROR_SEND_EMAIL_TO_USER')
+            }
+          })
           .catch(e => resError(res, e.message))
-      })
+          })
       .catch(e => resError(res, e.message))
   }
 }
