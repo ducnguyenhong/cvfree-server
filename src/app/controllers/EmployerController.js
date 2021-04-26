@@ -116,14 +116,15 @@ class EmployerController {
                 jobId,
                 jobName: job._doc.name,
                 isDone: false,
-                createdAt: new Date()
+                createdAt: new Date(),
+                status: 'ACTIVE'
               }
 
               const mailOptions = {
                 from: 'cvfreecontact@gmail.com',
                 to: cv._doc.detail.email,
-                subject: 'CVFREE - Ứng viên mới ứng tuyển',
-                text: `Xin chào ${`${cv._doc.detail.fullname}`.toLowerCase()}.
+                subject: 'CVFREE - Thông báo ứng tuyển việc làm',
+                text: `Xin chào ${`${cv._doc.detail.fullname}`.toUpperCase()}.
 
 Nhà tuyển dụng đã chấp nhận hồ sơ của bạn về việc làm "${job._doc.name}" mà bạn đã ứng tuyển.
 Nhà tuyển dụng sẽ sớm liên lạc với bạn qua thông tin liên hệ trong CV.
@@ -201,8 +202,8 @@ CVFREE`
             const mailOptions = {
               from: 'cvfreecontact@gmail.com',
               to: cv._doc.detail.email,
-              subject: 'CVFREE - Ứng viên mới ứng tuyển',
-              text: `Xin chào ${`${cv._doc.detail.fullname}`.toLowerCase()}.
+              subject: 'CVFREE - Thông báo ứng tuyển việc làm',
+              text: `Xin chào ${`${cv._doc.detail.fullname}`.toUpperCase()}.
 
 Nhà tuyển dụng đã từ chối hồ sơ của bạn về việc làm "${job._doc.name}" mà bạn đã ứng tuyển.
 Hãy thử tìm công việc phù hợp hơn tại CVFREE. (${Constants.clientURL}/jobs)

@@ -25,8 +25,8 @@ const CandidateManage = new Schema({
         } | null | undefined,
       },
       isDone: Boolean,
-      candidateId: String,
-      createdAt: Date
+      createdAt: Date,
+      status: String
     }
   ]
 }, { timestamps: true }) // auto generate createdAt, updatedAt
