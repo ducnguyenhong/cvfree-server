@@ -76,7 +76,7 @@ class CvController {
   }
 
   // [POST] /cvs
-  async create(req, res) {
+  async create(req, res, next) {
     await checkUserTypeRequest(req, res, next, ['USER'])
     const { _id, listCV, fullname, avatar, username, numberOfCreateCv } = req.userRequest
     
@@ -90,7 +90,8 @@ class CvController {
       .then(cv => {
         const cvId = cv._doc._id
         UserModel.findOneAndUpdate({ _id }, { listCV: listCV && listCV.length > 0 ? [...listCV, cvId] : [cvId], numberOfCreateCv: numberOfCreateCv - 1 })
-        resSuccess(res, {cvInfo: cv}, 'CREATED_CV_SUCCESS')
+          .then(() => resSuccess(res, {cvInfo: cv}, 'CREATED_CV_SUCCESS'))
+          .catch(e => resError(res, e.message))
       })
       .catch(e => resError(res, e.message))
   }

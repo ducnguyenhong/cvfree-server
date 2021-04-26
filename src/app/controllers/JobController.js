@@ -178,7 +178,7 @@ class JobController {
               if (listCV && listCV.length > 0 && candidateApplied && candidateApplied.length > 0) {
                 for (let i = 0; i < candidateApplied.length; i++){
                   for (let j = 0; j < listCV.length; j++){
-                    if (candidateApplied[i] === listCV[j]) {
+                    if (candidateApplied[i].cvId === listCV[j]) {
                       isApplied = true
                     }
                   }

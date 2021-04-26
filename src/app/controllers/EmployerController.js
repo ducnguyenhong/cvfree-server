@@ -7,6 +7,8 @@ const resError = require('../response/response-error')
 const checkUserTypeRequest = require('../helper/check-user-type-request')
 const sendEmail = require('../helper/send-email')
 const Constants = require('../../constants')
+const ApplyManageModel = require('../models/ApplyManageModel')
+const getUserInfo = require('../helper/get-user-info')
 
 class EmployerController {
 
@@ -144,7 +146,22 @@ CVFREE`
                     const resultSendEmailToUser = sendMailToUser(mailOptions)
                     if (resultSendEmailToUser) {
                       JobModel.findOneAndUpdate({ _id: jobId }, { candidateApplied: newCandidateApplied })
-                      .then(() => resSuccess(res, null, 'ACCEPTED_CANDIDATE_SUCCESS'))
+                        .then(() => {
+                          ApplyManageModel.findOne({userId: cv._doc.creatorId})
+                            .then(applyManage => {
+                              let applies = applyManage.applies || []
+                              for (let i = 0; i < applies.length; i++){
+                                if (applies[i]._doc.cvId === cvId && applies[i]._doc.jobId === jobId) {
+                                  applies[i]._doc.status = 'APPROVED'
+                                }
+                              }
+
+                              ApplyManageModel.findOneAndUpdate({ userId: cv._doc.creatorId }, { applies })
+                                .then(() => resSuccess(res, null, 'ACCEPTED_CANDIDATE_SUCCESS'))
+                                .catch(e => resError(res, e.message))
+                            })
+                            .catch(e => resError(res, e.message))
+                      })
                       .catch(e => resError(res, e.message))
                     }
                     else {
@@ -160,7 +177,22 @@ CVFREE`
                     const resultSendEmailToUser = sendMailToUser(mailOptions)
                     if (resultSendEmailToUser) {
                       JobModel.findOneAndUpdate({ _id: jobId }, { candidateApplied: newCandidateApplied })
-                      .then(() => resSuccess(res, null, 'ACCEPTED_CANDIDATE_SUCCESS'))
+                        .then(() => {
+                          ApplyManageModel.findOne({userId: cv._doc.creatorId})
+                          .then(applyManage => {
+                            let applies = applyManage.applies || []
+                            for (let i = 0; i < applies.length; i++){
+                              if (applies[i]._doc.cvId === cvId && applies[i]._doc.jobId === jobId) {
+                                applies[i]._doc.status = 'APPROVED'
+                              }
+                            }
+
+                            ApplyManageModel.findOneAndUpdate({ userId: cv._doc.creatorId }, { applies })
+                              .then(() => resSuccess(res, null, 'ACCEPTED_CANDIDATE_SUCCESS'))
+                              .catch(e => resError(res, e.message))
+                          })
+                          .catch(e => resError(res, e.message))
+                      })
                       .catch(e => resError(res, e.message))
                     }
                     else {
@@ -218,7 +250,22 @@ CVFREE`
             const resultSendEmailToUser = sendMailToUser(mailOptions)
             if (resultSendEmailToUser) {
               JobModel.findOneAndUpdate({ _id: jobId }, { candidateApplied: newCandidateApplied })
-              .then(() => resSuccess(res, null, 'REJECTED_CANDIDATE_SUCCESS'))
+                .then(() => {
+                  ApplyManageModel.findOne({userId: cv._doc.creatorId})
+                  .then(applyManage => {
+                    let applies = applyManage.applies || []
+                    for (let i = 0; i < applies.length; i++){
+                      if (applies[i]._doc.cvId === cvId && applies[i]._doc.jobId === jobId) {
+                        applies[i]._doc.status = 'DINIED'
+                      }
+                    }
+
+                    ApplyManageModel.findOneAndUpdate({ userId: cv._doc.creatorId }, { applies })
+                      .then(() => resSuccess(res, null, 'REJECTED_CANDIDATE_SUCCESS'))
+                      .catch(e => resError(res, e.message))
+                  })
+                  .catch(e => resError(res, e.message))
+              } )
               .catch(e => resError(res, e.message))
             }
             else {
