@@ -7,6 +7,14 @@ const Company = new Schema({
   name: { type: String, required: true },
   taxCode: String,
   email: String,
+  creator: {
+    employeeIdCard: String,
+    employeeIdCardId: String,
+    position: {
+      value: String,
+      label: String
+    }
+  },
   logoId: String,
   phone: String,
   address: {
@@ -20,7 +28,10 @@ const Company = new Schema({
   backgroundId: String,
   intro: String,
   logo: String,
-  status: String
+  status: String,
+  listStaff: [
+    {id: String, role: String}
+  ]
 }, { timestamps: true }) // auto generate createdAt, updatedAt
 
 autoIncrement.initialize(mongoose.connection);

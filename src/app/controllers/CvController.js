@@ -97,7 +97,7 @@ class CvController {
   }
 
   // [PUT] /cvs
-  async update(req, res) {
+  async update(req, res, next) {
     await checkUserTypeRequest(req, res, next, ['USER'])
     const cvId = req.params.id
     CvModel.findByIdAndUpdate(cvId, req.body)

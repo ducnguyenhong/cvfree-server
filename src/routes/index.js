@@ -9,10 +9,12 @@ const cvRouter = require('./cv')
 const employerRouter = require('./employer')
 const jobRouter = require('./job')
 const companyRouter = require('./company')
+const reportJobRouter = require('./report-job')
 const apiVersion = require('../constants/index').apiVersion
 
 const route = (app) => {
   app.use(`/${apiVersion}/users`, userRouter);
+  app.use(`/${apiVersion}/report-job`, reportJobRouter);
   app.use(`/${apiVersion}/employer`, employerRouter);
   app.use(`/${apiVersion}/candidate-manage`, candidateManageRouter);
   app.use(`/${apiVersion}/apply-manage`, applyManageRouter);

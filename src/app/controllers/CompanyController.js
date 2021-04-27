@@ -53,7 +53,7 @@ class CompanyController {
       .then(companies => {
         const { dataPaging, pagination } = getPagingData(req, companies)
         const dataRes = dataPaging.map(item => {
-          return {value: item.id, label: item.name}
+          return {value: item._id, label: item.name}
         })
         return resSuccess(res, {items: dataRes, pagination})
       })
@@ -61,17 +61,24 @@ class CompanyController {
   }
 
   // [POST] /companies
-  async create(req, res) {
+  async create(req, res, next) {
     await checkUserTypeRequest(req, res, next, ['EMPLOYER'])
     const creatorId = req.userRequest._id
-    const newCompany = new CompanyModel({ ...req.body, creatorId })
+    const newCompany = new CompanyModel({ ...req.body, creatorId, listStaff: [{ id: creatorId, role: 'ADMIN' }] })
     
-    newCompany.save()
-      .then(company => {
-        const companyId = company._doc._id
-        UserModel.findOneAndUpdate({ id: creatorId }, { companyId })
-          .then(() => resSuccess(res, {companyInfo: company}, 'CREATED_COMPANY_SUCCESS'))
-          .catch(e => resError(res, e.message))
+    UserModel.findOne({ _id: creatorId })
+      .then(user => {
+        if (user._doc.companyId) {
+          return resError(res, 'USER_REQUEST_HAVE_COMPANY')
+        }
+        newCompany.save()
+        .then(company => {
+          const companyId = company._doc._id
+          UserModel.findOneAndUpdate({ _id: creatorId }, { companyId }, {new: true})
+            .then(user => resSuccess(res, {companyInfo: company, userDetail: user}, 'CREATED_COMPANY_SUCCESS'))
+            .catch(e => resError(res, e.message))
+        })
+        .catch(e => resError(res, e.message))
       })
       .catch(e => resError(res, e.message))
   }

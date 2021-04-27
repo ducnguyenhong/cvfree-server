@@ -8,7 +8,7 @@ const checkUserTypeRequest = require('../helper/check-user-type-request')
 const sendEmail = require('../helper/send-email')
 const Constants = require('../../constants')
 const ApplyManageModel = require('../models/ApplyManageModel')
-const getUserInfo = require('../helper/get-user-info')
+const CompanyModel = require("../models/CompanyModel");
 
 class EmployerController {
 
@@ -274,6 +274,37 @@ CVFREE`
           })
           .catch(e => resError(res, e.message))
           })
+      .catch(e => resError(res, e.message))
+  }
+
+  // [POST] /employer/update-company
+  async updateCompanyInfo(req, res, next) {
+    await checkUserTypeRequest(req, res, next, ['EMPLOYER'])
+    const userId = req.userRequest._id
+    const { companyId } = req.body
+    
+    UserModel.findOne({_id: userId})
+      .then(user => {
+        if (user._doc.companyId) {
+          return resError('CAN_NOT_UPDATE_COMPANY_INFO')
+        }
+
+        CompanyModel.findOne({_id: companyId})
+          .then(company => {
+            if (!company) {
+              return resError(res, 'NOT_EXISTS_COMPANY')
+            }
+            UserModel.findOneAndUpdate({_id: userId}, {companyId}, {new: true})
+              .then(newUser => {
+                const {listStaff} = company._doc
+                CompanyModel.findOneAndUpdate({ _id: companyId }, {listStaff: [...listStaff, {id: userId, role: 'MEMBER'}]})
+                  .then(() => resSuccess(res, { userDetail: newUser }, 'UPDATED_COMPANY_INFO'))
+                  .catch(e => resError(res, e.message))
+              })
+              .catch(e => resError(res, e.message))
+          })
+          .catch(e => resError(res, e.message))
+      })
       .catch(e => resError(res, e.message))
   }
 }

@@ -167,7 +167,7 @@ class JobController {
             const jobDetail = {
               ...dataRes,
               company: {
-                id: company.id,
+                id: company._id,
                 name: company.name,
                 logo: company.logo
               }
