@@ -5,6 +5,7 @@ const authMDW = require('../app/middlewares/check-auth')
 
 router.get('/employer', authMDW, companyController.showCompanyOfEmployer);
 router.get('/suggest', authMDW, companyController.suggest);
+router.put('/employer', authMDW, companyController.updateCompanyOfEmployer);
 router.get('/:id', companyController.showDetail);
 router.get('/:id/jobs', companyController.showListJob);
 router.get('/', authMDW, companyController.showList);

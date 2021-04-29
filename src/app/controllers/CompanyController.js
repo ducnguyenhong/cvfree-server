@@ -5,6 +5,7 @@ const resSuccess = require('../response/response-success')
 const resError = require('../response/response-error')
 const getPagingData = require('../helper/get-paging-data')
 const checkUserTypeRequest = require('../helper/check-user-type-request')
+const RequestUpdateCompanyModel = require('../models/RequestUpdateCompanyModel')
 
 class CompanyController {
 
@@ -79,6 +80,47 @@ class CompanyController {
             .catch(e => resError(res, e.message))
         })
         .catch(e => resError(res, e.message))
+      })
+      .catch(e => resError(res, e.message))
+  }
+
+  // [PUT] /companies/employer
+  async updateCompanyOfEmployer(req, res, next) {
+    await checkUserTypeRequest(req, res, next, ['EMPLOYER'])
+    const {_id: creatorId, companyId, fullname, avatar} = req.userRequest
+
+    CompanyModel.findOne({ _id: companyId })
+      .then(company => {
+        if (!company) {
+          resError(res, 'NOT_EXISTS_COMPANY')
+        }
+
+        const { listStaff } = company
+        let role = null
+        for (let i = 0; i < listStaff.length; i++){
+          if (listStaff[i]._doc.id === creatorId.toString()) {
+            role = listStaff[i]._doc.role
+          }
+        }
+
+        if (!role) {
+          resError(res, 'UNAUTHORZIRED', 401)
+        }
+
+        if (role === 'ADMIN') {
+          const {_id, ...dataUpdate} = req.body
+          CompanyModel.findOneAndUpdate({ _id: companyId }, { ...dataUpdate })
+            .then(() => resSuccess(res, null, 'UPDATED_COMPANY_INFO'))
+            .catch(e => resError(res, e.message))
+        }
+
+        if (role === 'MEMBER') {
+          const newRequestUpdate = new RequestUpdateCompanyModel({ status: 'ACTIVE', content: {...req.body.content}, userRequest: { id: creatorId, fullname, avatar } })
+          
+          newRequestUpdate.save()
+            .then(() => resSuccess(res, 'RECEIVED_REQUEST_UPDATE'))
+            .catch(e => resError(res, e.message))
+        }
       })
       .catch(e => resError(res, e.message))
   }

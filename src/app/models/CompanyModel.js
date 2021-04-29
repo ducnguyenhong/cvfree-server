@@ -18,9 +18,12 @@ const Company = new Schema({
   logoId: String,
   phone: String,
   address: {
-    value: { district: String, city: String },
-    label: String,
-    street: String
+    value: {
+      city: { value: String, label: String},
+      district: { value: String, label: String },
+      street: String
+    },
+    label: String
   } | null,
   website: String,
   personnelSize: String,
