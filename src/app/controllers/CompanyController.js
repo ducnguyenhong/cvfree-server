@@ -75,7 +75,7 @@ class CompanyController {
         newCompany.save()
         .then(company => {
           const companyId = company._doc._id
-          UserModel.findOneAndUpdate({ _id: creatorId }, { companyId }, {new: true})
+          UserModel.findOneAndUpdate({ _id: creatorId }, { companyId, isAdminOfCompany: true }, {new: true})
             .then(user => resSuccess(res, {companyInfo: company, userDetail: user}, 'CREATED_COMPANY_SUCCESS'))
             .catch(e => resError(res, e.message))
         })
@@ -87,7 +87,7 @@ class CompanyController {
   // [PUT] /companies/employer
   async updateCompanyOfEmployer(req, res, next) {
     await checkUserTypeRequest(req, res, next, ['EMPLOYER'])
-    const {_id: creatorId, companyId, fullname, avatar} = req.userRequest
+    const {_id: userRequestId, companyId, fullname: userRequestName, avatar: userRequestAvatar, numberOfRequestUpdateCompany, email: userRequestEmail} = req.userRequest
 
     CompanyModel.findOne({ _id: companyId })
       .then(company => {
@@ -98,13 +98,13 @@ class CompanyController {
         const { listStaff } = company
         let role = null
         for (let i = 0; i < listStaff.length; i++){
-          if (listStaff[i]._doc.id === creatorId.toString()) {
+          if (listStaff[i]._doc.id === userRequestId.toString()) {
             role = listStaff[i]._doc.role
           }
         }
 
         if (!role) {
-          resError(res, 'UNAUTHORZIRED', 401)
+          resError(res, 'UNAUTHORIZED', 401)
         }
 
         if (role === 'ADMIN') {
@@ -115,10 +115,38 @@ class CompanyController {
         }
 
         if (role === 'MEMBER') {
-          const newRequestUpdate = new RequestUpdateCompanyModel({ status: 'ACTIVE', content: {...req.body.content}, userRequest: { id: creatorId, fullname, avatar } })
+          if (!numberOfRequestUpdateCompany) {
+            resError(res, 'CAN_NOT_REQUEST_UPDATE')
+          }
+          const { _id: companyId, name, logo, creatorId } = company._doc
           
-          newRequestUpdate.save()
-            .then(() => resSuccess(res, 'RECEIVED_REQUEST_UPDATE'))
+          UserModel.findOne({ _id: creatorId })
+            .then(userAdmin => {
+              const {_id: adminId, fullname: adminName, avatar: adminAvatar, email: adminEmail} = userAdmin._doc
+              const newRequestUpdate = new RequestUpdateCompanyModel({
+                status: 'ACTIVE',
+                processStatus: 'WAITING',
+                userAdmin: {id: adminId.toString(), fullname: adminName, avatar: adminAvatar, email: adminEmail},
+                content: { ...req.body.content },
+                rootInfo: {id: companyId.toString(), name, logo},
+                userRequest: {
+                  id: userRequestId,
+                  fullname: userRequestName,
+                  avatar: userRequestAvatar,
+                  employeeIdCard: req.body.userRequest.employeeIdCard,
+                  position: req.body.userRequest.position,
+                  email: userRequestEmail
+                }
+              })
+
+              UserModel.findOneAndUpdate({ _id: userRequestId }, { numberOfRequestUpdateCompany: numberOfRequestUpdateCompany - 1 })
+                .then(() => {
+                  newRequestUpdate.save()
+                    .then(() => resSuccess(res, 'RECEIVED_REQUEST_UPDATE'))
+                    .catch(e => resError(res, e.message))
+                })
+                .catch(e => resError(res, e.message))
+            })
             .catch(e => resError(res, e.message))
         }
       })

@@ -17,8 +17,9 @@ const User = new Schema({
   birthday: { type: Date },
   verify: {type: Boolean},
   coin: { type: Number },
-  numberOfCreateCv: Number,
   companyId: { type: String },
+  isAdminOfCompany: Boolean,
+  beWarned: Boolean,
   country: { type: String, maxlength: 255 },
   fullname: { type: String, maxlength: 255 },
   gender: { type: String, maxlength: 6 },
@@ -32,8 +33,10 @@ const User = new Schema({
   findJob: { type: Boolean },
   listCV: [{type: String}],
   typeAccount: { type: String, maxlength: 20 },
-  numberOfPosting: { type: Number },
-  numberOfCandidateOpening: {type: Number}
+  numberOfCreateCv: Number, // Candidate
+  numberOfPosting: Number, // Employer
+  numberOfRequestUpdateCompany: Number, // Employer but not Admin of company
+  numberOfCandidateOpening: Number // Employer
 }, { timestamps: true }) // auto generate createdAt, updatedAt
 
 autoIncrement.initialize(mongoose.connection);

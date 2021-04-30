@@ -32,6 +32,9 @@ class AuthController {
     if (user && !user._doc.verify) {
       return resError(res, 'ACCOUNT_NOT_VERIFY')
     }
+    if (user && user._doc.status === 'INACTIVE') {
+      return resError(res, 'ACCOUNT_HAS_BEEN_LOCKED')
+    }
     const accessTokenLife = CONSTANTS.accessTokenLife
     const accessTokenSecret = CONSTANTS.accessTokenSecret
 
@@ -87,7 +90,8 @@ class AuthController {
     if (type === 'EMPLOYER') {
       bonusData = {
         numberOfCandidateOpening: 3,
-        numberOfPosting: 3
+        numberOfPosting: 3,
+        numberOfRequestUpdateCompany: 1
       }
     }
 

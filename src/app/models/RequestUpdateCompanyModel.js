@@ -6,7 +6,23 @@ const RequestUpdateCompany = new Schema({
   userRequest: {
     id: String,
     fullname: String,
-    avatar: String
+    email: String,
+    avatar: String,
+    employeeIdCard: String,
+    position: { value: String, label: String}
+  },
+  rootInfo: {
+    id: String,
+    name: String,
+    logo: String
+  },
+  processStatus: String, // BANNED <= WAITING => SENT_AD_COMPANY => APPROVED/REJECTED => DONE,
+  reasonRejectOfAdminCompany: String,
+  userAdmin: {
+    id: String,
+    fullname: String,
+    avatar: String,
+    email: String
   },
   content: {
     name: String,

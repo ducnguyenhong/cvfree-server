@@ -9,22 +9,26 @@ const cvRouter = require('./cv')
 const employerRouter = require('./employer')
 const jobRouter = require('./job')
 const companyRouter = require('./company')
+const requestUpdateCompanyRouter = require('./request-update-company')
 const reportJobRouter = require('./report-job')
+const sendEmailRouter = require('./send-email')
 const apiVersion = require('../constants/index').apiVersion
 
 const route = (app) => {
-  app.use(`/${apiVersion}/users`, userRouter);
-  app.use(`/${apiVersion}/report-job`, reportJobRouter);
-  app.use(`/${apiVersion}/employer`, employerRouter);
-  app.use(`/${apiVersion}/candidate-manage`, candidateManageRouter);
-  app.use(`/${apiVersion}/apply-manage`, applyManageRouter);
-  app.use(`/${apiVersion}/candidate`, candidateRouter);
-  app.use(`/${apiVersion}/cvs`, cvRouter);
-  app.use(`/${apiVersion}/locations`, locationRouter);
-  app.use(`/${apiVersion}/auth`, authRouter);
-  app.use(`/${apiVersion}/media`, mediaRouter);
-  app.use(`/${apiVersion}/jobs`, jobRouter);
-  app.use(`/${apiVersion}/companies`, companyRouter);
-};
+  app.use(`/${apiVersion}/users`, userRouter)
+  app.use(`/${apiVersion}/send-email`, sendEmailRouter)
+  app.use(`/${apiVersion}/report-job`, reportJobRouter)
+  app.use(`/${apiVersion}/employer`, employerRouter)
+  app.use(`/${apiVersion}/request-update-company`, requestUpdateCompanyRouter)
+  app.use(`/${apiVersion}/candidate-manage`, candidateManageRouter)
+  app.use(`/${apiVersion}/apply-manage`, applyManageRouter)
+  app.use(`/${apiVersion}/candidate`, candidateRouter)
+  app.use(`/${apiVersion}/cvs`, cvRouter)
+  app.use(`/${apiVersion}/locations`, locationRouter)
+  app.use(`/${apiVersion}/auth`, authRouter)
+  app.use(`/${apiVersion}/media`, mediaRouter)
+  app.use(`/${apiVersion}/jobs`, jobRouter)
+  app.use(`/${apiVersion}/companies`, companyRouter)
+}
 
-module.exports = route;
+module.exports = route
