@@ -128,6 +128,7 @@ class CompanyController {
                 processStatus: 'WAITING',
                 userAdmin: {id: adminId.toString(), fullname: adminName, avatar: adminAvatar, email: adminEmail},
                 content: { ...req.body.content },
+                companyId: companyId.toString(),
                 rootInfo: {id: companyId.toString(), name, logo},
                 userRequest: {
                   id: userRequestId,

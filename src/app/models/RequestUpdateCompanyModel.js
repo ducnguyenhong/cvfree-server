@@ -11,6 +11,7 @@ const RequestUpdateCompany = new Schema({
     employeeIdCard: String,
     position: { value: String, label: String}
   },
+  companyId: String,
   rootInfo: {
     id: String,
     name: String,
