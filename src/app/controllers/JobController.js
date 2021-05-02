@@ -10,6 +10,7 @@ const resSuccess = require('../response/response-success')
 const resError = require('../response/response-error')
 const getPagingData = require('../helper/get-paging-data')
 const checkUserTypeRequest = require('../helper/check-user-type-request')
+const getQueryParams = require('../helper/get-query-params')
 
 class JobController {
 
@@ -55,7 +56,22 @@ class JobController {
 
   // [GET] /jobs/newest
   async showListNewest(req, res) {
-    JobModel.find({status: 'ACTIVE'}).sort({ updatedAt: -1 })
+    const objQuery = {status: 'ACTIVE'}
+
+    if (req.query.params) {
+      for (const [key, value] of Object.entries(req.query.params)) {
+        if (key && value && key !== 'page' && key !== 'size') {
+          if (key === 'keyword') {
+            objQuery.fullname = new RegExp(value, "i")
+          }
+          else {
+            objQuery[`${key}`] = value
+          }
+        }
+      }
+    }
+
+    JobModel.find(objQuery).sort({ updatedAt: -1 })
       .then(jobs => {
         const { dataPaging, pagination } = getPagingData(req, jobs)
         const dataRes = dataPaging.map(item => {
@@ -66,6 +82,30 @@ class JobController {
       })
       .catch(e => resError(res, e.message))
   }
+
+    // [GET] /jobs/interns
+    async showListInterns(req, res) {
+      JobModel.find({status: 'ACTIVE'}).sort({ updatedAt: -1 })
+        .then(jobs => {
+          let internJobs = []
+          if (jobs && jobs.length > 0) {
+            for (let i = 0; i < jobs.length; i++){
+              const { recruitmentPosition } = jobs[i]._doc
+              if ([...recruitmentPosition].includes('INTERNS')) {
+                internJobs.push(jobs[i])
+              }
+            }
+          }
+          
+          const { dataPaging, pagination } = getPagingData(req, internJobs)
+          const dataRes = dataPaging.map(item => {
+            const { creatorId, candidateApplied, ...jobsRes } = item
+            return jobsRes
+          })
+          return resSuccess(res, {items: dataRes, pagination})
+        })
+        .catch(e => resError(res, e.message))
+    }
 
   // [POST] /jobs
   async create(req, res, next) {

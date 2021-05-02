@@ -4,13 +4,30 @@ const Schema = mongoose.Schema
 
 const ReportJob = new Schema({
   reporter: {
+    id: String,
+    avatar: String,
     fullname: String,
     phone: String,
     email: String,
-    content: String
   },
+  content: String,
+  creator: {
+    id: String,
+    fullname: String,
+    phone: String,
+    email: String,
+    avatar: String
+  },
+  company: {
+    id: String,
+    name: String,
+    logo: String
+  },
+  expiredAt: Date,
+  processStatus: String,
   job: {
-    id: String
+    id: String,
+    name: String
   },
   status: String
 }, { timestamps: true }) 

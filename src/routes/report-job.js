@@ -3,6 +3,7 @@ const router = express.Router();
 const reportJobController = require('../app/controllers/ReportJobController');
 const authMDW = require('../app/middlewares/check-auth')
 
-router.post('/', reportJobController.reportJob)
+router.get('/', authMDW, reportJobController.showList)
+router.post('/', authMDW, reportJobController.reportJob)
 
 module.exports = router;

@@ -36,7 +36,8 @@ const User = new Schema({
   numberOfCreateCv: Number, // Candidate
   numberOfPosting: Number, // Employer
   numberOfRequestUpdateCompany: Number, // Employer but not Admin of company
-  numberOfCandidateOpening: Number // Employer
+  numberOfCandidateOpening: Number, // Employer
+  numberOfReportJob: Number // Employer but not Creator of Job, Candidate
 }, { timestamps: true }) // auto generate createdAt, updatedAt
 
 autoIncrement.initialize(mongoose.connection);

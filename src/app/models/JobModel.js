@@ -29,8 +29,8 @@ const Job = new Schema({
   genderRequirement: [{ type: String}],
   salary: {
     salaryType: String,
-    salaryFrom: Number,
-    salaryTo: Number,
+    salaryFrom: String,
+    salaryTo: String,
     salaryCurrency: String,
   },
   jobDescription: String,

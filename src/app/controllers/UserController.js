@@ -35,7 +35,7 @@ class UserController {
       .then(users => {
         const { dataPaging, pagination } = getPagingData(req, users)
         const dataRes = dataPaging.map(item => {
-          const { password, _id, ...data } = item
+          const { password, ...data } = item
           return data
         })
         return resSuccess(res, {
@@ -49,11 +49,11 @@ class UserController {
   // [GET] /users/:id
   async showDetail(req, res, next) {
     await checkUserTypeRequest(req, res, next, ['ADMIN'])
-    const {_id} = req.params
-    UserModel.findOne({_id})
+    const {id} = req.params
+    UserModel.findOne({_id: id})
       .then(user => {
-        const { password, _id, __v, ...dataRes } = user._doc
-        return resSuccess(res, {user: dataRes})
+        const { password, __v, ...dataRes } = user._doc
+        return resSuccess(res, {userDetail: dataRes})
       })
       .catch(e => resError(res, e.message))
   }

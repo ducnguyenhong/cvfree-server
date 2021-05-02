@@ -4,6 +4,7 @@ const jobController = require('../app/controllers/JobController');
 const authMDW = require('../app/middlewares/check-auth')
 
 router.get('/newest', jobController.showListNewest);
+router.get('/intern', jobController.showListInterns);
 router.put('/update/:id', authMDW,  jobController.update);
 router.get('/employer/:id', authMDW,  jobController.showListJobOfEmployer);
 router.post('/:id/candidate-apply',authMDW, jobController.candidateApply);
