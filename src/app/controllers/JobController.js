@@ -83,29 +83,60 @@ class JobController {
       .catch(e => resError(res, e.message))
   }
 
-    // [GET] /jobs/interns
-    async showListInterns(req, res) {
-      JobModel.find({status: 'ACTIVE'}).sort({ updatedAt: -1 })
-        .then(jobs => {
-          let internJobs = []
-          if (jobs && jobs.length > 0) {
-            for (let i = 0; i < jobs.length; i++){
-              const { recruitmentPosition } = jobs[i]._doc
-              if ([...recruitmentPosition].includes('INTERNS')) {
-                internJobs.push(jobs[i])
-              }
-            }
-          }
-          
-          const { dataPaging, pagination } = getPagingData(req, internJobs)
-          const dataRes = dataPaging.map(item => {
-            const { creatorId, candidateApplied, ...jobsRes } = item
-            return jobsRes
-          })
-          return resSuccess(res, {items: dataRes, pagination})
-        })
-        .catch(e => resError(res, e.message))
+  // [GET] /jobs/interns
+  async showListInterns(req, res) {
+    const cursor = JobModel.find({ status: 'ACTIVE' }).cursor();
+    let internJobs = []
+    for (let doc = await cursor.next(); doc != null; doc = await cursor.next()) {
+      if ([...doc._doc.recruitmentPosition].includes('INTERNS')) {
+        internJobs.push(doc)
+      }
     }
+    const { dataPaging, pagination } = getPagingData(req, internJobs)
+    const dataRes = dataPaging.map(item => {
+      const { creatorId, candidateApplied, ...jobsRes } = item
+      return jobsRes
+    })
+    return resSuccess(res, {items: dataRes, pagination})
+  }
+
+  // [GET] /jobs/high-salary
+  async showListHighSalary(req, res) {
+    const cursor = JobModel.find({ status: 'ACTIVE' }).cursor();
+    let jobs = []
+    for (let doc = await cursor.next(); doc != null; doc = await cursor.next()) {
+      const { salaryType, salaryFrom } = doc._doc.salary
+      console.log('ducnh9', `${salaryFrom}`.replace(/./g, ''));
+      if (salaryType === 'FROM_TO' && Number(`${salaryFrom}`.replace(/\./g, '')) >= 15000000) {
+        jobs.push(doc)
+      }
+    }
+    const { dataPaging, pagination } = getPagingData(req, jobs)
+    const dataRes = dataPaging.map(item => {
+      const { creatorId, candidateApplied, ...jobsRes } = item
+      return jobsRes
+    })
+    return resSuccess(res, {items: dataRes, pagination})
+  }
+
+  // [GET] /jobs/city/:id
+  async showListCity(req, res) {
+    const cityId = req.params.id
+    const cursor = JobModel.find({ status: 'ACTIVE' }).cursor();
+    let jobs = []
+    for (let doc = await cursor.next(); doc != null; doc = await cursor.next()) {
+      const {address} = doc._doc
+      if (address.value.city === cityId) {
+        jobs.push(doc)
+      }
+    }
+    const { dataPaging, pagination } = getPagingData(req, jobs)
+    const dataRes = dataPaging.map(item => {
+      const { creatorId, candidateApplied, ...jobsRes } = item
+      return jobsRes
+    })
+    return resSuccess(res, {items: dataRes, pagination})
+  }
 
   // [POST] /jobs
   async create(req, res, next) {
