@@ -10,7 +10,6 @@ const resSuccess = require('../response/response-success')
 const resError = require('../response/response-error')
 const getPagingData = require('../helper/get-paging-data')
 const checkUserTypeRequest = require('../helper/check-user-type-request')
-const getQueryParams = require('../helper/get-query-params')
 
 class JobController {
 
@@ -127,6 +126,25 @@ class JobController {
     for (let doc = await cursor.next(); doc != null; doc = await cursor.next()) {
       const {address} = doc._doc
       if (address.value.city === cityId) {
+        jobs.push(doc)
+      }
+    }
+    const { dataPaging, pagination } = getPagingData(req, jobs)
+    const dataRes = dataPaging.map(item => {
+      const { creatorId, candidateApplied, ...jobsRes } = item
+      return jobsRes
+    })
+    return resSuccess(res, {items: dataRes, pagination})
+  }
+
+  // [GET] /jobs/career/:id
+  async showListCareer(req, res) {
+    const careerId = req.params.id
+    const cursor = JobModel.find({ status: 'ACTIVE' }).cursor();
+    let jobs = []
+    for (let doc = await cursor.next(); doc != null; doc = await cursor.next()) {
+      const {career} = doc._doc
+      if ([...career].includes(careerId)) {
         jobs.push(doc)
       }
     }

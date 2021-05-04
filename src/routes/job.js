@@ -7,6 +7,7 @@ router.get('/newest', jobController.showListNewest);
 router.get('/intern', jobController.showListInterns);
 router.get('/high-salary', jobController.showListHighSalary);
 router.get('/city/:id', jobController.showListCity);
+router.get('/career/:id', jobController.showListCareer);
 router.put('/:id', authMDW,  jobController.update);
 router.get('/employer/:id', authMDW,  jobController.showListJobOfEmployer);
 router.post('/:id/candidate-apply',authMDW, jobController.candidateApply);
