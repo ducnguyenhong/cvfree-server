@@ -10,7 +10,10 @@ const Cv = new Schema({
     username: String
   },
   color: { type: String, maxlength: 10, required: true },
-  template: { type: String, maxlength: 20, required: true },
+  template: {
+    value: String,
+    label: String
+  },
   fontSize: { type: String, maxlength: 10, required: true },
   fontFamily: { type: String, maxlength: 50, required: true },
   isPrimary: {type: Boolean},

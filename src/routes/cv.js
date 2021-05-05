@@ -8,6 +8,7 @@ router.get('/my-cvs/:id', authMDW, cvController.showMyCvs);
 router.get('/:id', authMDW, cvController.showDetail);
 router.get('/', authMDW, cvController.showList);
 router.post('/', authMDW, cvController.create);
+router.put('/:id/update-template', authMDW, cvController.updateTemplate);
 router.put('/:id', authMDW, cvController.update);
 router.delete('/:id', authMDW, cvController.delete);
 

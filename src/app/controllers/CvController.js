@@ -96,12 +96,22 @@ class CvController {
       .catch(e => resError(res, e.message))
   }
 
-  // [PUT] /cvs
+  // [PUT] /cvs/:id
   async update(req, res, next) {
     await checkUserTypeRequest(req, res, next, ['USER'])
     const cvId = req.params.id
     CvModel.findByIdAndUpdate(cvId, req.body)
       .then(cv => resSuccess(res, {cvInfo: cv}, 'UPDATED_CV_SUCCESS'))
+      .catch(e => resError(res, e.message))
+  }
+
+  // [PUT] /cvs/:id/update-template
+  async updateTemplate(req, res, next) {
+    await checkUserTypeRequest(req, res, next, ['USER'])
+    const cvId = req.params.id
+    const {template} = req.body
+    CvModel.findOneAndUpdate({_id: cvId}, {template}, {new: true})
+      .then(cv => resSuccess(res, {cvDetail: cv}, 'CHANGED_TEMPLATE_CV_SUCCESS'))
       .catch(e => resError(res, e.message))
   }
 

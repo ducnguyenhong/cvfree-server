@@ -22,13 +22,13 @@ class CandidateController {
             const { fullname, birthday, address, workExperience, gender, applyPosition, avatar } = detail
             dataRes.push({
               avatar,
-              career: career.label,
+              career: career ? career.label : '',
               candidateId,
               fullname,
               birthday,
               gender,
               applyPosition,
-              address: address.label,
+              address: address ? address.label : '',
               workExperience: !!(workExperience && workExperience.length > 0),
               updatedAt,
               cvId: unlockedEmployers && [...unlockedEmployers].includes(employerId) ? _id : ''
