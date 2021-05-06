@@ -70,7 +70,7 @@ class AuthController {
     const {username, email, type} = req.body
 
     const sendMailToUser = async (mailOptions) => {
-      return await sendEmail(mailOptions)
+      return await sendEmail(mailOptions).result
     }
 
     if (await checkExistsData(UserModel, 'username', username)) {
@@ -111,11 +111,11 @@ CVFREE`
 
         const resultSendEmailToUser = sendMailToUser(mailOptions)
 
-        if (resultSendEmailToUser.result) {
+        if (resultSendEmailToUser) {
           return resSuccess(res, { userInfo: newUser }, 'CREATED_ACCOUNT_SUCCESS', 201)
         }
         else {
-          return resError(res, resultSendEmailToUser.error)
+          return resError(res, 'SEND_EMAIL_ERROR')
         }
       })
       .catch(e => resError(res, e.message))
@@ -126,7 +126,7 @@ CVFREE`
     const { email } = req.body
     
     const sendMailToUser = async (mailOptions) => {
-      return await sendEmail(mailOptions)
+      return await sendEmail(mailOptions).result
     }
 
     if (!(await (checkExistsData(UserModel, 'email', email)))) {
@@ -152,11 +152,11 @@ CVFREE`
 
         const resultSendEmailToUser = sendMailToUser(mailOptions)
 
-        if (resultSendEmailToUser.result) {
+        if (resultSendEmailToUser) {
           return resSuccess(res, null, 'FORGOT_PASSWORD_SUCCESS')
         }
         else {
-          return resError(res, resultSendEmailToUser.error)
+          return resError(res, 'SEND_EMAIL_ERROR')
         }
       })
       .catch(e => resError(res, e.message))
@@ -170,12 +170,20 @@ CVFREE`
     if (!regexASCII.test(userId) || !(await checkExistsData(UserModel, '_id', userId))) {
       return resError(res, 'USER_NOT_EXISTS', 409)
     }
-    
-    UserModel.findOneAndUpdate({ _id: userId }, { verify: true })
-      .then(() => resSuccess(res, null, 'VERIFY_SUCCESS'))
+
+    UserModel.findOne({ _id: userId })
+      .then(user => {
+        if (user._doc.verify) {
+          return resSuccess(res, null, 'VERIFY_SUCCESS')
+        }
+        else {
+          UserModel.findOneAndUpdate({ _id: userId }, { verify: true })
+            .then(() => resSuccess(res, null, 'VERIFY_SUCCESS'))
+            .catch(e => resError(res, e.message))
+        }
+      })
       .catch(e => resError(res, e.message))
   }
-
 }
 
 module.exports = new AuthController();

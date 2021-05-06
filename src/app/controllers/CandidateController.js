@@ -4,40 +4,109 @@ const resSuccess = require('../response/response-success')
 const resError = require('../response/response-error')
 const getPagingData = require('../helper/get-paging-data')
 const checkUserTypeRequest = require('../helper/check-user-type-request')
+const moment = require('moment')
 
 class CandidateController {
   // [GET] /candidate
   async showListCandidate(req, res, next) {
     await checkUserTypeRequest(req, res, next, ['EMPLOYER'])
     const employerId = req.userRequest.id
-  
-    CvModel.find().sort({ updatedAt: -1 })
-      .then(cvs => {
-        const { dataPaging, pagination } = getPagingData(req, cvs)
-        let dataRes = []
+    
+    const cursor = CvModel.find({ status: 'ACTIVE' }).sort({ updatedAt: -1 }).cursor();
+    let listCandidate = []
+    const { applyPosition, gender, yearOfBirth, formOfWork, career, workExperience, other, city } = req.query
+    
+    for (let doc = await cursor.next(); doc != null; doc = await cursor.next()) {
+      const cv = doc._doc
 
-        for (let i = 0; i < dataPaging.length; i++) {
-          const { candidateId, detail, isPrimary, career, updatedAt, _id, unlockedEmployers } = dataPaging[i]
-          if (isPrimary) {
-            const { fullname, birthday, address, workExperience, gender, applyPosition, avatar } = detail
-            dataRes.push({
-              avatar,
-              career: career ? career.label : '',
-              candidateId,
-              fullname,
-              birthday,
-              gender,
-              applyPosition,
-              address: address ? address.label : '',
-              workExperience: !!(workExperience && workExperience.length > 0),
-              updatedAt,
-              cvId: unlockedEmployers && [...unlockedEmployers].includes(employerId) ? _id : ''
-            })
+      if (applyPosition || gender || yearOfBirth || formOfWork || career || workExperience || other || city) {
+        // applyPosition
+        if (applyPosition) {
+          if (applyPosition.toLowerCase().includes(cv.detail.applyPosition.toLowerCase()) || cv.detail.applyPosition.toLowerCase().includes(applyPosition.toLowerCase())) {
+            listCandidate.push(doc)
           }
         }
-        return resSuccess(res, {items: dataRes, pagination})
+        //gender
+        if (gender) {
+          if (gender === cv.detail.gender) {
+            listCandidate.push(doc)
+          }
+        }
+        // yearOfBirth
+        if (yearOfBirth) {
+          if (moment(cv.detail.birthday).format('YYYY') === yearOfBirth) {
+            listCandidate.push(doc)
+          }
+        }
+        // formOfWork
+        if (formOfWork) {
+          if ([...cv.formOfWork].includes(formOfWork)) {
+            listCandidate.push(doc)
+          }
+        }
+        // career
+        if (career) {
+          if (cv.career.value === career) {
+            listCandidate.push(doc)
+          }
+        }
+        // workExperience
+        if (workExperience && workExperience === '1') {
+          if (cv.detail.workExperience && cv.detail.workExperience.length > 0) {
+            listCandidate.push(doc)
+          }
+        }
+        // city
+        if (city) {
+          if (cv.detail.address.value.city === city) {
+            listCandidate.push(doc)
+          }
+        }
+        // other
+        if (other) {
+          if (other === 'BASIC_SKILL' && cv.detail.basicSkill && cv.detail.basicSkill.length > 0) {
+            listCandidate.push(doc)
+          }
+          if (other === 'ADVANCED_SKILL' && cv.detail.advancedSkill && cv.detail.advancedSkill.length > 0) {
+            listCandidate.push(doc)
+          }
+          if (other === 'ACTIVITY' && cv.detail.activity && cv.detail.activity.length > 0) {
+            listCandidate.push(doc)
+          }
+          if (other === 'AWARD' && cv.detail.award && cv.detail.award.length > 0) {
+            listCandidate.push(doc)
+          }
+          if (other === 'CERTIFICATE' && cv.detail.certificate && cv.detail.certificate.length > 0) {
+            listCandidate.push(doc)
+          }
+        }
+      }
+      else {
+        listCandidate.push(doc)
+      }
+    }
+
+    const { dataPaging, pagination } = getPagingData(req, listCandidate)
+    let dataRes = []
+
+    for (let i = 0; i < dataPaging.length; i++) {
+      const { candidateId, detail, career, updatedAt, _id, unlockedEmployers } = dataPaging[i]
+      const { fullname, birthday, address, workExperience, gender, applyPosition, avatar } = detail
+      dataRes.push({
+        avatar,
+        career: career ? career.label : '',
+        candidateId,
+        fullname,
+        birthday,
+        gender,
+        applyPosition,
+        address: address ? address.label : '',
+        workExperience: !!(workExperience && workExperience.length > 0),
+        updatedAt,
+        cvId: unlockedEmployers && [...unlockedEmployers].includes(employerId) ? _id : ''
       })
-      .catch(e => resError(res, e.message))
+    }
+    return resSuccess(res, {items: dataRes, pagination})
   }
 
   // [GET] /candidate/jobId=:jobId/informations=:ids
