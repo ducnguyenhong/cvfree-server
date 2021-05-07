@@ -64,19 +64,20 @@ class CandidateController {
         }
         // other
         if (other) {
-          if (other === 'BASIC_SKILL' && cv.detail.basicSkill && cv.detail.basicSkill.length > 0) {
+          const arrayOther = other.split(',')
+          if (arrayOther.includes('BASIC_SKILL') && cv.detail.basicSkill && cv.detail.basicSkill.length > 0) {
             listCandidate.push(doc)
           }
-          if (other === 'ADVANCED_SKILL' && cv.detail.advancedSkill && cv.detail.advancedSkill.length > 0) {
+          if (arrayOther.includes('ADVANCED_SKILL') && cv.detail.advancedSkill && cv.detail.advancedSkill.length > 0) {
             listCandidate.push(doc)
           }
-          if (other === 'ACTIVITY' && cv.detail.activity && cv.detail.activity.length > 0) {
+          if (arrayOther.includes('ACTIVITY') && cv.detail.activity && cv.detail.activity.length > 0) {
             listCandidate.push(doc)
           }
-          if (other === 'AWARD' && cv.detail.award && cv.detail.award.length > 0) {
+          if (arrayOther.includes('AWARD') && cv.detail.award && cv.detail.award.length > 0) {
             listCandidate.push(doc)
           }
-          if (other === 'CERTIFICATE' && cv.detail.certificate && cv.detail.certificate.length > 0) {
+          if (arrayOther.includes('CERTIFICATE') && cv.detail.certificate && cv.detail.certificate.length > 0) {
             listCandidate.push(doc)
           }
         }
