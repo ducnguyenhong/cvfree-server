@@ -13,6 +13,7 @@ const companyRouter = require('./company')
 const requestUpdateCompanyRouter = require('./request-update-company')
 const reportJobRouter = require('./report-job')
 const sendEmailRouter = require('./send-email')
+const dashboardRouter = require('./dashboard')
 const apiVersion = require('../constants/index').apiVersion
 
 const route = (app) => {
@@ -26,6 +27,7 @@ const route = (app) => {
   app.use(`/${apiVersion}/apply-manage`, applyManageRouter)
   app.use(`/${apiVersion}/candidate`, candidateRouter)
   app.use(`/${apiVersion}/cvs`, cvRouter)
+  app.use(`/${apiVersion}/dashboard`, dashboardRouter)
   app.use(`/${apiVersion}/locations`, locationRouter)
   app.use(`/${apiVersion}/auth`, authRouter)
   app.use(`/${apiVersion}/media`, mediaRouter)
