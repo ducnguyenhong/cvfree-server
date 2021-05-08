@@ -321,7 +321,7 @@ class JobController {
                       text: `Xin chào ${fullname}.
 
 Một ứng viên vừa ứng tuyển vào công việc "${name}" mà bạn đã đăng tuyển.
-Hãy đăng nhập vào CVFREE để xem chi tiết thông tin. (${Constants.clientURL}/sign-in)
+Hãy truy cập vào CVFREE để xem chi tiết thông tin. (${Constants.clientURL})
 
 Trân trọng,
 CVFREE`

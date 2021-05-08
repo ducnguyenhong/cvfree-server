@@ -130,7 +130,7 @@ class EmployerController {
 
 Nhà tuyển dụng đã chấp nhận hồ sơ của bạn về việc làm "${job._doc.name}" mà bạn đã ứng tuyển.
 Nhà tuyển dụng sẽ sớm liên lạc với bạn qua thông tin liên hệ trong CV.
-Hãy đăng nhập vào CVFREE để xem chi tiết thông tin. (${Constants.clientURL}/sign-in)
+Hãy truy cập vào CVFREE để xem chi tiết thông tin. (${Constants.clientURL})
 
 Trân trọng,
 CVFREE`

@@ -95,7 +95,7 @@ class RequestUpdateCompanyController {
               text: `Xin chào ${userRequest.fullname}.
 
 Yêu cầu thay đổi thông tin công ty của bạn đã được chấp nhận.
-Bạn có thể đăng nhập vào CVFREE để xem thông tin chi tiết (${Constants.clientURL}/sign-in)
+Bạn có thể truy cập vào CVFREE để xem thông tin chi tiết (${Constants.clientURL})
 
 Trân trọng,
 CVFREE`}
