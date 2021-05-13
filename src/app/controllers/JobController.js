@@ -70,7 +70,7 @@ class JobController {
       }
     }
 
-    JobModel.find(objQuery).sort({ updatedAt: -1 })
+    JobModel.find(objQuery).sort({ createdAt: -1 })
       .then(jobs => {
         const { dataPaging, pagination } = getPagingData(req, jobs)
         const dataRes = dataPaging.map(item => {
@@ -262,14 +262,12 @@ class JobController {
               }
             }
             if (user && user._doc.type === 'USER') {
-              let isApplied = false // nếu có token, check xem job đó đã apply chưa
-              const listCV = user._doc.listCV
-              if (listCV && listCV.length > 0 && candidateApplied && candidateApplied.length > 0) {
+              let isApplied = false // nếu có token, check xem user đã applu job đó hay chưa
+              const userId = user._doc._id
+              if (userId && candidateApplied && candidateApplied.length > 0) {
                 for (let i = 0; i < candidateApplied.length; i++){
-                  for (let j = 0; j < listCV.length; j++){
-                    if (candidateApplied[i].cvId === listCV[j]) {
-                      isApplied = true
-                    }
+                  if (candidateApplied[i].userId === userId.toString()) {
+                    isApplied = true
                   }
                 }
               }
@@ -285,8 +283,8 @@ class JobController {
   // [POST] /jobs/:id/candidate-apply
   async candidateApply(req, res, next) {
     const jobId = req.params.id
-    const cvId = req.body.cvId
-    const { type, _id: userId } = req.userRequest
+    const { applyType, applyValue} = req.body
+    const { type, _id: userId, fullname: userFullname } = req.userRequest
     
     if (type !== 'USER') {
       return resError(res, 'UNAUTHORIZED', 401)
@@ -296,20 +294,15 @@ class JobController {
       return await sendEmail(mailOptions).result
     }
 
+    // tìm job => tìm cv => update job filed candidateApplied => tìm ng tạo job => gửi email => thêm vào bảng applymanage
+
     JobModel.findOne({_id: jobId})
       .then(job => {
         if (!job) {
           return resError(res, 'NOT_EXISTS_JOB')
         }
-
-        CvModel.findOne({ _id: cvId })
-          .then(cv => {
-            if (!cv) {
-              return resError(res, 'NOT_EXISTS_CV')
-            }
-            const { candidateApplied, creatorId, name } = job._doc
-
-            JobModel.findOneAndUpdate({ _id: jobId }, { candidateApplied: [...candidateApplied, {cvId, appliedAt: new Date()}] })
+        const { candidateApplied, creatorId, name } = job._doc
+            JobModel.findOneAndUpdate({ _id: jobId }, { candidateApplied: [...candidateApplied, {userId, applyType, applyValue, appliedAt: new Date()}] })
               .then(() => {
                 UserModel.findOne({ _id: creatorId })
                   .then(creator => {
@@ -333,9 +326,12 @@ CVFREE`
                         const dataApply = {
                           jobId: job._doc._id,
                           jobName: job._doc.name,
-                          cvId,
-                          cvName: cv._doc.name,
-                          cvFullname: cv._doc.detail.fullname,
+                          applyType,
+                          applyValue,
+                          applyCandidate: {
+                            userId,
+                            fullname: userFullname ,
+                          },
                           status: 'WAITING',
                           createdAt: new Date()
                         }
@@ -368,8 +364,6 @@ CVFREE`
               })
               .catch(e => resError(res, e.message)) 
               })
-          .catch(e => resError(res, e.message)) 
-      })
       .catch(e => resError(res, e.message)) 
   }
 

@@ -8,9 +8,12 @@ const ApplyManage = new Schema({
     {
       jobId: String,
       jobName: String,
-      cvId: String,
-      cvName: String,
-      cvFullname: String,
+      applyType: String,
+      applyValue: String,
+      applyCandidate: {
+        userId: String,
+        fullname: String
+      },
       status: String, // WAITING => DINIED/APPROVED => DONE,
       createdAt: Date
     }

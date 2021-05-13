@@ -37,7 +37,9 @@ const Job = new Schema({
   requirementForCandidate: String,
   benefitToEnjoy: String,
   candidateApplied: [{
-    cvId: String,
+    userId: String,
+    applyType: String, // OTHER , CVFREE, PDF
+    applyValue: String,
     appliedAt: Date
   }],
   status: String
