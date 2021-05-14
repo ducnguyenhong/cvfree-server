@@ -94,7 +94,7 @@ class EmployerController {
     const sendMailToUser = async (mailOptions) => {
       return await sendEmail(mailOptions).result
     }
-    const { jobId, cvId } = req.body
+    const { jobId,  applyValue, applyType } = req.body
     CvModel.findOne({ _id: cvId })
       .then(cv => {
         if (!cv) {
@@ -218,7 +218,7 @@ CVFREE`
     const sendMailToUser = async (mailOptions) => {
       return await sendEmail(mailOptions).result
     }
-    const { jobId, cvId } = req.body
+    const { jobId, applyValue, applyType } = req.body
 
     CvModel.findOne({_id: cvId})
       .then(cv => {

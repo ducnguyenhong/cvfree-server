@@ -40,7 +40,12 @@ const Job = new Schema({
     userId: String,
     applyType: String, // OTHER , CVFREE, PDF
     applyValue: String,
-    appliedAt: Date
+    appliedAt: Date,
+    candidate: {
+      fullname: String,
+      gender: String,
+      avatar: String,
+    }
   }],
   status: String
 }, { timestamps: true }) // auto generate createdAt, updatedAt

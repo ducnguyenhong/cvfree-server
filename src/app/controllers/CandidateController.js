@@ -133,7 +133,7 @@ class CandidateController {
         let candidateI = null
         if (candidateApplied && candidateApplied.length > 0) {
           for (let j = 0; j < candidateApplied.length; j++){
-            if (candidateApplied[j]._doc.cvId === listCandidate[i]) {
+            if (candidateApplied[j]._doc.applyValue === listCandidate[i]) {
               candidateI = candidateApplied[j]
             }
           }
@@ -145,6 +145,7 @@ class CandidateController {
               const { detail, _id } = candidate._doc
               const { fullname, gender, avatar } = detail
               dataRes.push({
+                id: listCandidate[i],
                 avatar,
                 fullname,
                 gender,

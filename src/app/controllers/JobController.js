@@ -43,7 +43,7 @@ class JobController {
           const { candidateApplied, ...data } = item._doc
           let newCandidateApplied = []
           for (let i = 0; i < candidateApplied.length; i++){
-            newCandidateApplied.push(candidateApplied[i].cvId)
+            newCandidateApplied.push(candidateApplied[i])
           }
           return {...data, candidateApplied: newCandidateApplied}
         })
@@ -284,7 +284,7 @@ class JobController {
   async candidateApply(req, res, next) {
     const jobId = req.params.id
     const { applyType, applyValue} = req.body
-    const { type, _id: userId, fullname: userFullname } = req.userRequest
+    const { type, _id: userId, fullname: userFullname, gender: userGender, avatar: userAvatar } = req.userRequest
     
     if (type !== 'USER') {
       return resError(res, 'UNAUTHORIZED', 401)
@@ -302,7 +302,17 @@ class JobController {
           return resError(res, 'NOT_EXISTS_JOB')
         }
         const { candidateApplied, creatorId, name } = job._doc
-            JobModel.findOneAndUpdate({ _id: jobId }, { candidateApplied: [...candidateApplied, {userId, applyType, applyValue, appliedAt: new Date()}] })
+        JobModel.findOneAndUpdate({ _id: jobId },
+          {
+            candidateApplied: [...candidateApplied, {
+              candidate: {
+                fullname: userFullname,
+                avatar: userAvatar,
+                gender: userGender
+              },
+              userId, applyType, applyValue, appliedAt: new Date()
+            }]
+          })
               .then(() => {
                 UserModel.findOne({ _id: creatorId })
                   .then(creator => {

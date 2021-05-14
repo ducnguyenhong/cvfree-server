@@ -12,7 +12,7 @@ const ApplyManage = new Schema({
       applyValue: String,
       applyCandidate: {
         userId: String,
-        fullname: String
+        fullname: String,
       },
       status: String, // WAITING => DINIED/APPROVED => DONE,
       createdAt: Date
