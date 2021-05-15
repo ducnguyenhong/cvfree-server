@@ -36,7 +36,7 @@ class CandidateManageController {
   async updateDone(req, res, next) {
     await checkUserTypeRequest(req, res, next, ['EMPLOYER'])
     const { _id } = req.userRequest
-    const {cmId} = req.body
+    const {cmId, userId} = req.body
   
     CandidateManageModel.findOne({employerId: _id})
       .then(candidateManage => {
@@ -44,40 +44,32 @@ class CandidateManageController {
           return resSuccess(res, {item: [], pagination: {page: 1, size: 10, totalPages: 0, totalItems: 0}})
         }
         let jobId = null
-        let cvId = null
+        let applyValue = null
         const datas = candidateManage.candidates || []
         for (let i = 0; i < datas.length; i++){
           if (datas[i]._id.toString() === cmId) {
             datas[i].isDone = true
             jobId = datas[i].jobId
-            cvId = datas[i].cvId
+            applyValue = datas[i].applyValue
           }
         }
 
-        CvModel.findOne({ _id: cvId })
-          .then(cv => {
-            if (!cv) {
-              resError(res, 'NOT_EXISTS_CV')  
-            }
+        CandidateManageModel.findOneAndUpdate({ employerId: _id }, { candidates: datas })
+          .then(() => {
+            ApplyManageModel.findOne({userId})
+              .then(applyManage => {
+                let applies = applyManage.applies || []
+                for (let i = 0; i < applies.length; i++){
+                  if (applies[i]._doc.applyValue === applyValue && applies[i]._doc.jobId === jobId) {
+                    applies[i]._doc.status = 'DONE'
+                  }
+                }
 
-            CandidateManageModel.findOneAndUpdate({ employerId: _id }, { candidates: datas })
-            .then(() => {
-              ApplyManageModel.findOne({userId: cv._doc.creatorId})
-                    .then(applyManage => {
-                      let applies = applyManage.applies || []
-                      for (let i = 0; i < applies.length; i++){
-                        if (applies[i]._doc.cvId === cvId && applies[i]._doc.jobId === jobId) {
-                          applies[i]._doc.status = 'DONE'
-                        }
-                      }
-
-                      ApplyManageModel.findOneAndUpdate({ userId: cv._doc.creatorId }, { applies })
-                        .then(() => resSuccess(res, null, 'UPDATED_STATUS_SUCCESS'))
-                        .catch(e => resError(res, e.message))
-                    })
-                    .catch(e => resError(res, e.message))
-            })
-            .catch(e => resError(res, e.message))
+                ApplyManageModel.findOneAndUpdate({ userId }, { applies })
+                  .then(() => resSuccess(res, null, 'UPDATED_STATUS_SUCCESS'))
+                  .catch(e => resError(res, e.message))
+              })
+              .catch(e => resError(res, e.message))
           })
           .catch(e => resError(res, e.message))
       })

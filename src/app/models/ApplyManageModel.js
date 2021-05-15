@@ -7,6 +7,7 @@ const ApplyManage = new Schema({
   applies: [
     {
       jobId: String,
+      userId: String,
       jobName: String,
       applyType: String,
       applyValue: String,

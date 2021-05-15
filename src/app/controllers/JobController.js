@@ -105,7 +105,6 @@ class JobController {
     let jobs = []
     for (let doc = await cursor.next(); doc != null; doc = await cursor.next()) {
       const { salaryType, salaryFrom } = doc._doc.salary
-      console.log('ducnh9', `${salaryFrom}`.replace(/./g, ''));
       if (salaryType === 'FROM_TO' && Number(`${salaryFrom}`.replace(/\./g, '')) >= 15000000) {
         jobs.push(doc)
       }

@@ -9,6 +9,8 @@ const sendEmail = require('../helper/send-email')
 const Constants = require('../../constants')
 const ApplyManageModel = require('../models/ApplyManageModel')
 const CompanyModel = require("../models/CompanyModel");
+const getCvInfo = require('../helper/get-cv-info')
+const getUserInfo = require('../helper/get-user-info')
 
 class EmployerController {
 
@@ -18,13 +20,13 @@ class EmployerController {
     const userId = req.userRequest.id
     const candidateId = req.body.id
 
-    UserModel.findOne({ id: userId})
+    UserModel.findOne({ id: userId })
       .then(user => {
         if (!user) {
           return resError(res, 'NOT_EXISTS_EMPLOYER')
         }
 
-        CvModel.findOne({candidateId})
+        CvModel.findOne({ candidateId })
           .then(cv => {
             if (!cv) {
               return resError(res, 'NOT_EXISTS_CANDIDATE')
@@ -35,14 +37,14 @@ class EmployerController {
               return resError(res, 'OPEN_TURN_ENDED')
             }
 
-            CvModel.findOneAndUpdate({candidateId}, {unlockedEmployers: unlockedEmployers ? [...unlockedEmployers, userId] : [userId]})
+            CvModel.findOneAndUpdate({ candidateId }, { unlockedEmployers: unlockedEmployers ? [...unlockedEmployers, userId] : [userId] })
               .then(() => {
-                UserModel.findOneAndUpdate({id: userId}, {numberOfCandidateOpening: numberOfCandidateOpening - 1})
+                UserModel.findOneAndUpdate({ id: userId }, { numberOfCandidateOpening: numberOfCandidateOpening - 1 })
                   .then(() => {
                     // thành công
                     return resSuccess(res, null, 'UNLOCKED_CANDIDATE_SUCCESS')
-                })
-                .catch(e => resError(res, e.message))
+                  })
+                  .catch(e => resError(res, e.message))
               })
               .catch(e => resError(res, e.message))
           })
@@ -57,7 +59,7 @@ class EmployerController {
     const employerId = req.params.id
     await checkUserTypeRequest(req, res, next, ['ADMIN', 'EMPLOYER'])
   
-    UserModel.findOne({id: employerId})
+    UserModel.findOne({ id: employerId })
       .then(user => {
         if (!user) {
           return resError(res, 'NOT_EXISTS_EMPLOYER')
@@ -87,46 +89,48 @@ class EmployerController {
   // [POST] /employer/accept-candidate
   async acceptCandidate(req, res, next) {
     await checkUserTypeRequest(req, res, next, ['EMPLOYER'])
+    const { jobId, applyValue, userId, applyType } = req.body
     const employer = req.userRequest
-    if (!employer) {
-      return resError(res, 'NOT_EXISTS_EMPLOYER')
-    }
+
     const sendMailToUser = async (mailOptions) => {
       return await sendEmail(mailOptions).result
     }
-    const { jobId,  applyValue, applyType } = req.body
-    CvModel.findOne({ _id: cvId })
-      .then(cv => {
-        if (!cv) {
-          return resError(res, 'NOT_EXISTS_CANDIDATE')
-        }
-        JobModel.findOne({ _id: jobId })
-        .then(job => {
-          if (!job) {
-            return resError(res, 'NOT_EXISTS_JOB')
-          }
-          const { candidateApplied } = job._doc
-          let newCandidateApplied = [...candidateApplied]
-          newCandidateApplied = newCandidateApplied.filter(item => item._doc.cvId !== cvId)
 
-          CandidateManageModel.findOne({ employerId: employer._id })
-            .then(candidateManage => {
-              const {fullname, avatar, gender, phone, email, address} = cv._doc.detail
-              const newData = {
-                cvId,
-                candidate: {candidateId: cv._doc.candidateId, fullname, avatar, gender, phone, email, address},
+    const candidateInfo = applyType === 'CVFREE' ? await getCvInfo(res, {_id: applyValue}) : await getUserInfo(res, {_id: userId})
+
+    JobModel.findOne({ _id: jobId })
+      .then(job => {
+        if (!job) {
+          return resError(res, 'NOT_EXISTS_JOB')
+        }
+        const { candidateApplied } = job._doc
+        let newCandidateApplied = [...candidateApplied]
+        newCandidateApplied = newCandidateApplied.filter(item => item._doc.applyValue !== applyValue)
+
+        CandidateManageModel.findOne({ employerId: employer._id })
+          .then(candidateManage => {
+            let newData = {}
+            let mailOptions = {}
+
+            if (applyType === 'CVFREE') {
+              const { detail, _id: cvId } = candidateInfo
+              const {fullname, avatar, gender, phone, email, address} = detail
+              newData = {
+                userId,
+                candidate: { fullname, avatar, gender, phone, email, address },
                 jobId,
+                applyValue,
+                applyType,
                 jobName: job._doc.name,
                 isDone: false,
                 createdAt: new Date(),
                 status: 'ACTIVE'
               }
-
-              const mailOptions = {
+              mailOptions = {
                 from: 'cvfreecontact@gmail.com',
-                to: cv._doc.detail.email,
+                to: email,
                 subject: 'CVFREE - Thông báo ứng tuyển việc làm',
-                text: `Xin chào ${`${cv._doc.detail.fullname}`.toUpperCase()}.
+                text: `Xin chào ${`${fullname}`.toUpperCase()}.
 
 Nhà tuyển dụng đã chấp nhận hồ sơ của bạn về việc làm "${job._doc.name}" mà bạn đã ứng tuyển.
 Nhà tuyển dụng sẽ sớm liên lạc với bạn qua thông tin liên hệ trong CV.
@@ -135,146 +139,185 @@ Hãy truy cập vào CVFREE để xem chi tiết thông tin. (${Constants.client
 Trân trọng,
 CVFREE`
               };
-
-              if (!candidateManage) {
-                const newCandidateManage = new CandidateManageModel({
-                  employerId: employer._id,
-                  candidates: [newData]
-                })
-                newCandidateManage.save()
-                  .then(() => {
-                    const resultSendEmailToUser = sendMailToUser(mailOptions)
-                    if (resultSendEmailToUser) {
-                      JobModel.findOneAndUpdate({ _id: jobId }, { candidateApplied: newCandidateApplied })
-                        .then(() => {
-                          ApplyManageModel.findOne({userId: cv._doc.creatorId})
-                            .then(applyManage => {
-                              let applies = applyManage.applies || []
-                              for (let i = 0; i < applies.length; i++){
-                                if (applies[i]._doc.cvId === cvId && applies[i]._doc.jobId === jobId) {
-                                  applies[i]._doc.status = 'APPROVED'
-                                }
-                              }
-
-                              ApplyManageModel.findOneAndUpdate({ userId: cv._doc.creatorId }, { applies })
-                                .then(() => resSuccess(res, null, 'ACCEPTED_CANDIDATE_SUCCESS'))
-                                .catch(e => resError(res, e.message))
-                            })
-                            .catch(e => resError(res, e.message))
-                      })
-                      .catch(e => resError(res, e.message))
-                    }
-                    else {
-                      return resError(res, 'ERROR_SEND_EMAIL_TO_USER')
-                    }
-                  })
-                  .catch(e => resError(res, e.message))
+            }
+            else { // PDF | OTHER
+              const { fullname, avatar, gender, phone, email, address } = candidateInfo
+              newData = {
+                userId,
+                candidate: { fullname, avatar, gender, phone, email, address },
+                jobId,
+                applyValue,
+                applyType,
+                jobName: job._doc.name,
+                isDone: false,
+                createdAt: new Date(),
+                status: 'ACTIVE'
               }
-              else {
-                const { candidates } = candidateManage._doc
-                CandidateManageModel.findOneAndUpdate({ employerId: employer._id }, { candidates: [...candidates, newData] })
-                  .then(() => {
-                    const resultSendEmailToUser = sendMailToUser(mailOptions)
-                    if (resultSendEmailToUser) {
-                      JobModel.findOneAndUpdate({ _id: jobId }, { candidateApplied: newCandidateApplied })
-                        .then(() => {
-                          ApplyManageModel.findOne({userId: cv._doc.creatorId})
+              mailOptions = {
+                from: 'cvfreecontact@gmail.com',
+                to: email,
+                subject: 'CVFREE - Thông báo ứng tuyển việc làm',
+                text: `Xin chào ${`${fullname || email}`.toUpperCase()}.
+
+Nhà tuyển dụng đã chấp nhận hồ sơ của bạn về việc làm "${job._doc.name}" mà bạn đã ứng tuyển.
+Nhà tuyển dụng sẽ sớm liên lạc với bạn qua thông tin liên hệ trong CV.
+Hãy truy cập vào CVFREE để xem chi tiết thông tin. (${Constants.clientURL})
+
+Trân trọng,
+CVFREE`
+              };
+            }
+
+            if (!candidateManage) {
+              const newCandidateManage = new CandidateManageModel({
+                employerId: employer._id,
+                candidates: [newData]
+              })
+              newCandidateManage.save()
+                .then(() => {
+                  const resultSendEmailToUser = sendMailToUser(mailOptions)
+                  if (resultSendEmailToUser) {
+                    JobModel.findOneAndUpdate({ _id: jobId }, { candidateApplied: newCandidateApplied })
+                      .then(() => {
+                        ApplyManageModel.findOne({ userId })
                           .then(applyManage => {
                             let applies = applyManage.applies || []
-                            for (let i = 0; i < applies.length; i++){
-                              if (applies[i]._doc.cvId === cvId && applies[i]._doc.jobId === jobId) {
+                            for (let i = 0; i < applies.length; i++) {
+                              if (applies[i]._doc.applyValue === applyValue && applies[i]._doc.jobId === jobId) {
                                 applies[i]._doc.status = 'APPROVED'
                               }
                             }
 
-                            ApplyManageModel.findOneAndUpdate({ userId: cv._doc.creatorId }, { applies })
+                            ApplyManageModel.findOneAndUpdate({ userId }, { applies })
                               .then(() => resSuccess(res, null, 'ACCEPTED_CANDIDATE_SUCCESS'))
                               .catch(e => resError(res, e.message))
                           })
                           .catch(e => resError(res, e.message))
                       })
                       .catch(e => resError(res, e.message))
-                    }
-                    else {
-                      return resError(res, 'ERROR_SEND_EMAIL_TO_USER')
-                    }
-                  })
-                  .catch(e => resError(res, e.message))
-              }
-              })
-              .catch(e => resError(res, e.message))
-        })
-        .catch(e => resError(res, e.message))
+                  }
+                  else {
+                    return resError(res, 'ERROR_SEND_EMAIL_TO_USER')
+                  }
+                })
+                .catch(e => resError(res, e.message))
+            }
+            else {
+              const { candidates } = candidateManage._doc
+              CandidateManageModel.findOneAndUpdate({ employerId: employer._id }, { candidates: [...candidates, newData] })
+                .then(() => {
+                  const resultSendEmailToUser = sendMailToUser(mailOptions)
+                  if (resultSendEmailToUser) {
+                    JobModel.findOneAndUpdate({ _id: jobId }, { candidateApplied: newCandidateApplied })
+                      .then(() => {
+                        ApplyManageModel.findOne({ userId })
+                          .then(applyManage => {
+                            let applies = applyManage.applies || []
+                            for (let i = 0; i < applies.length; i++) {
+                              if (applies[i]._doc.applyValue === applyValue && applies[i]._doc.jobId === jobId) {
+                                applies[i]._doc.status = 'APPROVED'
+                              }
+                            }
+
+                            ApplyManageModel.findOneAndUpdate({ userId }, { applies })
+                              .then(() => resSuccess(res, null, 'ACCEPTED_CANDIDATE_SUCCESS'))
+                              .catch(e => resError(res, e.message))
+                          })
+                          .catch(e => resError(res, e.message))
+                      })
+                      .catch(e => resError(res, e.message))
+                  }
+                  else {
+                    return resError(res, 'ERROR_SEND_EMAIL_TO_USER')
+                  }
+                })
+                .catch(e => resError(res, e.message))
+            }
+          })
+          .catch(e => resError(res, e.message))
       })
       .catch(e => resError(res, e.message))
   }
 
   // [POST] /employer/reject-candidate
   async rejectCandidate(req, res, next) {
-    const employer = req.userRequest
-    if (!employer) {
-      return resError(res, 'NOT_EXISTS_EMPLOYER')
-    }
+    await checkUserTypeRequest(req, res, next, ['EMPLOYER'])
+
     const sendMailToUser = async (mailOptions) => {
       return await sendEmail(mailOptions).result
     }
-    const { jobId, applyValue, applyType } = req.body
+    const { jobId, applyValue, userId, applyType } = req.body
 
-    CvModel.findOne({_id: cvId})
-      .then(cv => {
-        if (!cv) {
-          return resError(res, 'NOT_EXISTS_CV')
+    const candidateInfo = applyType === 'CVFREE' ? await getCvInfo(res, {_id: applyValue}) : await getUserInfo(res, {_id: userId})
+
+    JobModel.findOne({ _id: jobId })
+      .then(job => {
+        if (!job) {
+          return resError(res, 'NOT_EXISTS_JOB')
         }
+        let mailOptions = {}
 
-        JobModel.findOne({ _id: jobId })
-          .then(job => {
-            if (!job) {
-              return resError(res, 'NOT_EXISTS_JOB')
-            }
-            const mailOptions = {
-              from: 'cvfreecontact@gmail.com',
-              to: cv._doc.detail.email,
-              subject: 'CVFREE - Thông báo ứng tuyển việc làm',
-              text: `Xin chào ${`${cv._doc.detail.fullname}`.toUpperCase()}.
+        if (applyType === 'CVFREE') {
+          const { detail } = candidateInfo
+          const { fullname, email } = detail
+          mailOptions = {
+            from: 'cvfreecontact@gmail.com',
+            to: email,
+            subject: 'CVFREE - Thông báo ứng tuyển việc làm',
+            text: `Xin chào ${`${fullname || email}`.toUpperCase()}.
 
 Nhà tuyển dụng đã từ chối hồ sơ của bạn về việc làm "${job._doc.name}" mà bạn đã ứng tuyển.
 Hãy thử tìm công việc phù hợp hơn tại CVFREE. (${Constants.clientURL}/jobs)
 
 Trân trọng,
-CVFREE`
-            };
-            const { candidateApplied } = job._doc
-            let newCandidateApplied = [...candidateApplied]
-            newCandidateApplied = newCandidateApplied.filter(item => item._doc.cvId !== cvId)
+CVFREE`};
+        }
+        else {
+          const {email, fullname} = candidateInfo
+          mailOptions = {
+            from: 'cvfreecontact@gmail.com',
+            to: email,
+            subject: 'CVFREE - Thông báo ứng tuyển việc làm',
+            text: `Xin chào ${`${fullname || email}`.toUpperCase()}.
+  
+  Nhà tuyển dụng đã từ chối hồ sơ của bạn về việc làm "${job._doc.name}" mà bạn đã ứng tuyển.
+  Hãy thử tìm công việc phù hợp hơn tại CVFREE. (${Constants.clientURL}/jobs)
+  
+  Trân trọng,
+  CVFREE`
+          };
+        }
 
-            const resultSendEmailToUser = sendMailToUser(mailOptions)
-            if (resultSendEmailToUser) {
-              JobModel.findOneAndUpdate({ _id: jobId }, { candidateApplied: newCandidateApplied })
-                .then(() => {
-                  ApplyManageModel.findOne({userId: cv._doc.creatorId})
-                  .then(applyManage => {
-                    let applies = applyManage.applies || []
-                    for (let i = 0; i < applies.length; i++){
-                      if (applies[i]._doc.cvId === cvId && applies[i]._doc.jobId === jobId) {
-                        applies[i]._doc.status = 'DINIED'
-                      }
+        const { candidateApplied } = job._doc
+        let newCandidateApplied =  candidateApplied.filter(item => item._doc.applyValue !== applyValue)
+
+        const resultSendEmailToUser = sendMailToUser(mailOptions)
+        if (resultSendEmailToUser) {
+          JobModel.findOneAndUpdate({ _id: jobId }, { candidateApplied: newCandidateApplied })
+            .then(() => {
+              ApplyManageModel.findOne({ userId })
+                .then(applyManage => {
+                  let applies = applyManage.applies || []
+                  for (let i = 0; i < applies.length; i++) {
+                    if (applies[i]._doc.applyValue === applyValue && applies[i]._doc.jobId === jobId) {
+                      applies[i]._doc.status = 'DINIED'
                     }
+                  }
 
-                    ApplyManageModel.findOneAndUpdate({ userId: cv._doc.creatorId }, { applies })
-                      .then(() => resSuccess(res, null, 'REJECTED_CANDIDATE_SUCCESS'))
-                      .catch(e => resError(res, e.message))
-                  })
-                  .catch(e => resError(res, e.message))
-              } )
-              .catch(e => resError(res, e.message))
-            }
-            else {
-              return resError(res, 'ERROR_SEND_EMAIL_TO_USER')
-            }
-          })
-          .catch(e => resError(res, e.message))
-          })
+                  ApplyManageModel.findOneAndUpdate({ userId }, { applies })
+                    .then(() => resSuccess(res, null, 'REJECTED_CANDIDATE_SUCCESS'))
+                    .catch(e => resError(res, e.message))
+                })
+                .catch(e => resError(res, e.message))
+            })
+            .catch(e => resError(res, e.message))
+        }
+        else {
+          return resError(res, 'ERROR_SEND_EMAIL_TO_USER')
+        }
+      })
       .catch(e => resError(res, e.message))
+  
   }
 
   // [POST] /employer/update-company

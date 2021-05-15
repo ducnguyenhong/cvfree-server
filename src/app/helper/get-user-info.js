@@ -1,11 +1,11 @@
 const UserModel = require('../models/UserModel')
 const resError = require('../response/response-error')
 
-const getUserInfo = (objQuery) => {
-  UserModel.findOne(objQuery)
+const getUserInfo = (res, objQuery) => {
+  return UserModel.findOne(objQuery)
     .then(user => {
       if (!user) {
-        return null
+        return resError(res, 'NOT_EXISTS_USER')
       }
       return user._doc
     })

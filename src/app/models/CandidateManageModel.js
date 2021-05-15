@@ -8,11 +8,10 @@ const CandidateManage = new Schema({
     {
       jobId: String,
       jobName: String,
-      cvId: String,
+      userId: String,
       applyType: String,
       applyValue: String,
       candidate: {
-        candidateId: String,
         fullname: String,
         avatar: String,
         gender: String,
