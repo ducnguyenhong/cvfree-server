@@ -11,11 +11,13 @@ const cors = require('cors')
 // connect MongoDB
 db.connect()
 
+// Middleware
+app.use(cors())
+
 // path static
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Middleware
-app.use(cors())
 app.use(bodyParser.json());
 
 

@@ -19,7 +19,8 @@ const Cv = new Schema({
   isPrimary: {type: Boolean},
   name: { type: String },
   formOfWork: [{type: String}],
-  career: [{type: String}],
+  career: [{ type: String }],
+  language: String,
   unlockedEmployers: [{type: Number}],
   career: {
     value: { type: String },

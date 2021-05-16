@@ -3,7 +3,6 @@ const resSuccess = require('../response/response-success')
 const resError = require('../response/response-error')
 const getPagingData = require('../helper/get-paging-data')
 const checkUserTypeRequest = require('../helper/check-user-type-request')
-const CvModel = require('../models/CvModel')
 const ApplyManageModel = require('../models/ApplyManageModel')
 
 class CandidateManageController {
