@@ -8,17 +8,6 @@ const md5 = require('md5')
 const resSuccess = require('../response/response-success')
 const resError = require('../response/response-error')
 const sendEmail = require('../helper/send-email')
-
-const nodemailer = require('nodemailer');
-
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: 'cvfreecontact@gmail.com',
-    pass: 'protoncf291'
-  }
-});
-
 class AuthController {
 
   // [POST] /auth/sign-in
@@ -130,7 +119,7 @@ CVFREE`
     }
 
     if (!(await (checkExistsData(UserModel, 'email', email)))) {
-      return resError(res, 'EMAIL_INCORRECT', 409)
+      return resError(res, 'NOT_EXISTS_EMAIL', 409)
     }
     let newPassword = ''
     const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'

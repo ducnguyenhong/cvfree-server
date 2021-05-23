@@ -12,7 +12,7 @@ class ReportJobController {
   // [GET] /report-job
   async showList(req, res, next) {
     checkUserTypeRequest(req, res, next, ['ADMIN'])
-    ReportJobModel.find()
+    ReportJobModel.find().sort({updatedAt: -1})
       .then(reports => {
         const { dataPaging, pagination } = getPagingData(req, reports)
         return resSuccess(res, {items: dataPaging, pagination})
@@ -38,7 +38,7 @@ class ReportJobController {
             
             CompanyModel.findOne({ _id: companyId })
               .then(companyInfo => {
-                const { name: companyName, logo:companyLogo } = companyInfo._doc
+                const { name: companyName, logo: companyLogo } = companyInfo._doc
                 
                 const newData = {
                   reporter: {
@@ -71,7 +71,11 @@ class ReportJobController {
                 const newReportJob = new ReportJobModel(newData)
             
                 newReportJob.save()
-                  .then(() => resSuccess(res, null, 'REPORTED_JOB_SUCCESS'))
+                  .then(() => {
+                    UserModel.findOneAndUpdate({ _id: userRequestId }, { numberOfReportJob: 0 }, {new: true})
+                      .then(() => resSuccess(res, null, 'REPORTED_JOB_SUCCESS'))
+                      .catch(e => resError(res, e.message))
+                  })
                   .catch(e => resError(res, e.message))
               })
               .catch(e => resError(res, e.message))

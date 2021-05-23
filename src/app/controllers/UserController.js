@@ -59,10 +59,11 @@ class UserController {
   }
 
   // [PUT] /users/:id
-  async update(req, res) {
-    const { _id } = req.userRequest
+  async update(req, res, next) {
+    await checkUserTypeRequest(req, res, next, ['USER', 'EMPLOYER', 'ADMIN'])
+    const { _id, type } = req.userRequest
     const { id } = req.params
-    if (id !== _id.toString()) {
+    if (id !== _id.toString() && type !== 'ADMIN') {
       return resError(res, 'UNAUTHORIZED', 401)
     }
     const { fullname, email, phone, avatar, address, gender, birthday, avatarId } = req.body
@@ -74,8 +75,16 @@ class UserController {
     if (!(await checkExistsData(UserModel, 'email', email))) {
       resError(res, 'EXISTS_EMAIL', 409)
     }
+
+    let dataUpdate = {
+      fullname, email, phone, avatar, address, gender, birthday, avatarId
+    }
+    if (type === 'ADMIN') {
+      const {numberOfReportJob, numberOfCandidateOpening, numberOfCreateCv, numberOfPosting, numberOfRequestUpdateCompany} = req.body
+      dataUpdate = {...dataUpdate, numberOfReportJob, numberOfCandidateOpening, numberOfCreateCv, numberOfPosting, numberOfRequestUpdateCompany}
+    }
     
-    UserModel.findOneAndUpdate({_id}, {fullname, email, phone, avatar, address, gender, birthday, avatarId}, {new: true})
+    UserModel.findOneAndUpdate({_id: id}, dataUpdate, {new: true})
       .then(user => {
         const { password, __v, ...dataRes } = user._doc
         return resSuccess(res, {userDetail: dataRes}, 'UPDATED_USER_INFO')
