@@ -108,8 +108,8 @@ class CompanyController {
         }
 
         if (role === 'ADMIN') {
-          const {_id, ...dataUpdate} = req.body
-          CompanyModel.findOneAndUpdate({ _id: companyId }, { ...dataUpdate })
+          const {content} = req.body
+          CompanyModel.findOneAndUpdate({ _id: companyId }, { ...content })
             .then(() => resSuccess(res, null, 'UPDATED_COMPANY_INFO'))
             .catch(e => resError(res, e.message))
         }
