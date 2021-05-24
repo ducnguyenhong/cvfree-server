@@ -18,11 +18,11 @@ class AuthController {
     }
 
     const user = await UserModel.findOne({ username })
-    if (user && !user._doc.verify) {
-      return resError(res, 'ACCOUNT_NOT_VERIFY')
-    }
     if (user && user._doc.status === 'INACTIVE') {
       return resError(res, 'ACCOUNT_HAS_BEEN_LOCKED')
+    }
+    if (user && !user._doc.verify) {
+      return resError(res, 'ACCOUNT_NOT_VERIFY')
     }
     const accessTokenLife = CONSTANTS.accessTokenLife
     const accessTokenSecret = CONSTANTS.accessTokenSecret

@@ -80,8 +80,8 @@ class UserController {
       fullname, email, phone, avatar, address, gender, birthday, avatarId
     }
     if (type === 'ADMIN') {
-      const {numberOfReportJob, numberOfCandidateOpening, numberOfCreateCv, numberOfPosting, numberOfRequestUpdateCompany} = req.body
-      dataUpdate = {...dataUpdate, numberOfReportJob, numberOfCandidateOpening, numberOfCreateCv, numberOfPosting, numberOfRequestUpdateCompany}
+      const { numberOfReportJob, numberOfCandidateOpening, numberOfCreateCv, numberOfPosting, numberOfRequestUpdateCompany, verify, status } = req.body
+      dataUpdate = {...dataUpdate, numberOfReportJob, numberOfCandidateOpening, numberOfCreateCv, numberOfPosting, numberOfRequestUpdateCompany, verify, status}
     }
     
     UserModel.findOneAndUpdate({_id: id}, dataUpdate, {new: true})
