@@ -9,6 +9,7 @@ const Job = new Schema({
     avatar: String
   },
   name: { type: String, required: true },
+  companyId: String,
   company: {
     name: String,
     logo: String,

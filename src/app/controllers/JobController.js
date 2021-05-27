@@ -165,6 +165,7 @@ class JobController {
         const {name, logo} = company._doc
         const newJob = new JobModel({
           ...req.body,
+          companyId,
           company: { logo, name, id: companyId },
           creator: { avatar, fullname },
           creatorId: _id

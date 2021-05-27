@@ -29,8 +29,8 @@ const User = new Schema({
   type: { type: String, maxlength: 15, required: true },
   avatar: { type: String, maxlength: 255 },
   avatarId: String,
-  seeCV: { type: Boolean },
-  findJob: { type: Boolean },
+  // seeCV: { type: Boolean },
+  // findJob: { type: Boolean },
   listCV: [{type: String}],
   typeAccount: { type: String, maxlength: 20 },
   numberOfCreateCv: Number, // Candidate
