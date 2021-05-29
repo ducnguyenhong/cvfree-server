@@ -17,10 +17,10 @@ class EmployerController {
   // [POST] /employer/unlock-candidate
   async unlockCandidate(req, res, next) {
     await checkUserTypeRequest(req, res, next, ['EMPLOYER'])
-    const userId = req.userRequest.id
+    const employerId = req.userRequest._id
     const candidateId = req.body.id
 
-    UserModel.findOne({ id: userId })
+    UserModel.findOne({ _id: employerId })
       .then(user => {
         if (!user) {
           return resError(res, 'NOT_EXISTS_EMPLOYER')
@@ -37,12 +37,38 @@ class EmployerController {
               return resError(res, 'OPEN_TURN_ENDED')
             }
 
-            CvModel.findOneAndUpdate({ candidateId }, { unlockedEmployers: unlockedEmployers ? [...unlockedEmployers, userId] : [userId] })
+            CvModel.findOneAndUpdate({ candidateId }, { unlockedEmployers: unlockedEmployers ? [...unlockedEmployers, employerId] : [employerId] })
               .then(() => {
-                UserModel.findOneAndUpdate({ id: userId }, { numberOfCandidateOpening: numberOfCandidateOpening - 1 })
+                UserModel.findOneAndUpdate({ _id: employerId }, { numberOfCandidateOpening: numberOfCandidateOpening - 1 })
                   .then(() => {
-                    // thành công
-                    return resSuccess(res, null, 'UNLOCKED_CANDIDATE_SUCCESS')
+                    CandidateManageModel.findOne({ employerId })
+                      .then(candidateManage => {
+                        const { fullname, avatar, gender, phone, email, address } = cv._doc.detail
+                        const newData = { 
+                          candidate: { fullname, avatar, gender, phone, email, address },
+                          applyValue: cv._doc._id.toString(),
+                          applyType: 'LOOKING_FOR',
+                          isDone: false,
+                          createdAt: new Date(),
+                          status: 'ACTIVE'
+                        }
+                        if (!candidateManage) {
+                          const newCandidateManage = new CandidateManageModel({
+                            employerId,
+                            candidates: [newData]
+                          })
+                          newCandidateManage.save()
+                            .then(() => resSuccess(res, null, 'UNLOCKED_CANDIDATE_SUCCESS'))
+                            .catch(e => resError(res, e.message))
+                        }
+                        else {
+                          const { candidates } = candidateManage._doc
+                          CandidateManageModel.findOneAndUpdate({ employerId }, { candidates: [...candidates, newData] })
+                            .then(() => resSuccess(res, null, 'UNLOCKED_CANDIDATE_SUCCESS'))
+                            .catch(e => resError(res, e.message))
+                        }
+                      })
+                      .catch(e => resError(res, e.message))
                   })
                   .catch(e => resError(res, e.message))
               })

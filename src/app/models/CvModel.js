@@ -20,7 +20,7 @@ const Cv = new Schema({
   name: { type: String },
   formOfWork: [{type: String}],
   language: String,
-  unlockedEmployers: [{type: Number}],
+  unlockedEmployers: [{type: String}],
   career: {
     value: { type: String },
     label: {type: String}

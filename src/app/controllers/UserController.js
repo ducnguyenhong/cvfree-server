@@ -91,6 +91,21 @@ class UserController {
       })
       .catch(e => resError(res, e.message))
   }
+
+  // [PUT] /users/change-password
+  async changePassword(req, res, next) {
+    await checkUserTypeRequest(req, res, next, ['USER', 'EMPLOYER', 'ADMIN'])
+    const {oldPassword, newPassword} = req.body
+    const { _id, password } = req.userRequest
+
+    if (oldPassword !== password) {
+      return resError(res, 'INCORRECT_OLD_PASSWORD')
+    }
+
+    UserModel.findOneAndUpdate({ _id }, { password: newPassword })
+      .then(() => resSuccess(res, null, 'CHANGED_PASSWORD_SUCCESS'))
+      .catch(e => resError(res, e.message))
+  }
 }
 
 module.exports = new UserController();

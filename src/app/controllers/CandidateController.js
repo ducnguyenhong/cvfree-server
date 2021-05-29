@@ -10,7 +10,7 @@ class CandidateController {
   // [GET] /candidate
   async showListCandidate(req, res, next) {
     await checkUserTypeRequest(req, res, next, ['EMPLOYER'])
-    const employerId = req.userRequest.id
+    const employerId = req.userRequest._id.toString()
     
     const cursor = CvModel.find({ status: 'ACTIVE' }).sort({ updatedAt: -1 }).cursor();
     let listCandidate = []
@@ -197,7 +197,7 @@ class CandidateController {
   async showCandidateDetail(req, res, next) {
     await checkUserTypeRequest(req, res, next, ['EMPLOYER'])
     const candidateId = req.params.id
-    const userId = req.userRequest.id
+    const userId = req.userRequest._id.toString()
   
     CvModel.findOne({candidateId})
       .then(cv => {
