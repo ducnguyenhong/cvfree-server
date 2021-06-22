@@ -91,9 +91,9 @@ class CandidateController {
     let dataRes = []
 
     for (let i = 0; i < dataPaging.length; i++) {
-      const { candidateId, detail, career, updatedAt, _id, unlockedEmployers } = dataPaging[i]
+      const { candidateId, detail, career, updatedAt, _id, unlockedEmployers, isPublic } = dataPaging[i]
       const { fullname, birthday, address, workExperience, gender, applyPosition, avatar } = detail
-      dataRes.push({
+      isPublic === 'PUBLIC' && dataRes.push({
         avatar,
         career: career ? career.label : '',
         candidateId,

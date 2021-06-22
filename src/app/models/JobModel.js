@@ -48,6 +48,7 @@ const Job = new Schema({
       avatar: String,
     }
   }],
+  isPublic: {type: String},
   status: String
 }, { timestamps: true }) // auto generate createdAt, updatedAt
 

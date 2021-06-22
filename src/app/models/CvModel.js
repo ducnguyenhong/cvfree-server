@@ -91,6 +91,7 @@ const Cv = new Schema({
       }],
     }
   },
+  isPublic: {type: String},
   status: {type: String}
 }, { timestamps: true }) // auto generate createdAt, updatedAt
 

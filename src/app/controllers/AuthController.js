@@ -8,11 +8,12 @@ const md5 = require('md5')
 const resSuccess = require('../response/response-success')
 const resError = require('../response/response-error')
 const sendEmail = require('../helper/send-email')
+const AuthModel = require('../models/AuthModel')
 class AuthController {
 
   // [POST] /auth/sign-in
   async signIn(req, res) {
-    const {username, password} = req.body
+    const {username, password, deviceId} = req.body
     if (!(await checkExistsData(UserModel, 'username', username)) || !(await checkExistsData(UserModel, 'password', password))) {
       return resError(res, 'USERNAME_OR_PASSWORD_INCORRECT', 409)
     }
@@ -24,34 +25,64 @@ class AuthController {
     if (user && !user._doc.verify) {
       return resError(res, 'ACCOUNT_NOT_VERIFY')
     }
+
     const accessTokenLife = CONSTANTS.accessTokenLife
     const accessTokenSecret = CONSTANTS.accessTokenSecret
-
     const dataForAccessToken = {
-      username: user.username,
-      email: user.email
+      username: user._doc.username,
+      email: user._doc.email
     };
-
-    const accessToken = await generateToken(
+    let accessToken = await generateToken(
       dataForAccessToken,
       accessTokenSecret,
       accessTokenLife,
     );
 
-    if (!accessToken) {
-      return resError(res, 'CANNOT_GENERATE_TOKEN', 500)
-    }
+    AuthModel.findOne({ userId: user._doc._id.toString() })
+      .then(authUser => {
+        if (!authUser) {
+          const newAuthUser = new AuthModel({
+            userId: user._doc._id.toString(),
+            token: accessToken,
+            expiredAt: moment().add(7, 'days').valueOf(),
+            deviceId
+          })
 
-    return resSuccess(res,
-      {
-        userInfo: user,
-        auth: {
-          token: accessToken,
-          expiredAt: moment().add(30, 'days').valueOf()
+          newAuthUser.save()
+            .then(() => resSuccess(res,
+              {
+                userInfo: user,
+                auth: {
+                  token: accessToken,
+                  expiredAt: moment().add(7, 'days').valueOf()
+                }
+              },
+              'LOGIN_SUCCESS'
+            ))
+            .catch(e => resError(res, e.message))
         }
-      },
-      'LOGIN_SUCCESS'
-    )
+        else {
+          if (authUser._doc.deviceId === deviceId) {
+            accessToken = authUser._doc.token
+          }
+          AuthModel.findOneAndUpdate({ userId: user._doc._id.toString() }, {
+            token: accessToken,
+            expiredAt: moment().add(7, 'days').valueOf()
+          })
+          .then(() => resSuccess(res,
+            {
+              userInfo: user,
+              auth: {
+                token: accessToken,
+                expiredAt: moment().add(7, 'days').valueOf()
+              }
+            },
+            'LOGIN_SUCCESS'
+          ))
+          .catch(e => resError(res, e.message))
+        }
+      })
+      .catch(e => resError(res, e.message))
   }
 
   // [POST] /auth/sign-up

@@ -55,7 +55,7 @@ class JobController {
 
   // [GET] /jobs/newest
   async showListNewest(req, res) {
-    const objQuery = {status: 'ACTIVE'}
+    const objQuery = {status: 'ACTIVE', isPublic: 'PUBLIC'}
 
     if (req.query.params) {
       for (const [key, value] of Object.entries(req.query.params)) {
@@ -84,7 +84,7 @@ class JobController {
 
   // [GET] /jobs/interns
   async showListInterns(req, res) {
-    const cursor = JobModel.find({ status: 'ACTIVE' }).cursor();
+    const cursor = JobModel.find({ status: 'ACTIVE', isPublic: 'PUBLIC' }).cursor();
     let internJobs = []
     for (let doc = await cursor.next(); doc != null; doc = await cursor.next()) {
       if ([...doc._doc.recruitmentPosition].includes('INTERNS')) {
@@ -101,7 +101,7 @@ class JobController {
 
   // [GET] /jobs/high-salary
   async showListHighSalary(req, res) {
-    const cursor = JobModel.find({ status: 'ACTIVE' }).cursor();
+    const cursor = JobModel.find({ status: 'ACTIVE', isPublic: 'PUBLIC' }).cursor();
     let jobs = []
     for (let doc = await cursor.next(); doc != null; doc = await cursor.next()) {
       const { salaryType, salaryFrom } = doc._doc.salary
@@ -120,7 +120,7 @@ class JobController {
   // [GET] /jobs/city/:id
   async showListCity(req, res) {
     const cityId = req.params.id
-    const cursor = JobModel.find({ status: 'ACTIVE' }).cursor();
+    const cursor = JobModel.find({ status: 'ACTIVE', isPublic: 'PUBLIC' }).cursor();
     let jobs = []
     for (let doc = await cursor.next(); doc != null; doc = await cursor.next()) {
       const {address} = doc._doc
@@ -139,7 +139,7 @@ class JobController {
   // [GET] /jobs/career/:id
   async showListCareer(req, res) {
     const careerId = req.params.id
-    const cursor = JobModel.find({ status: 'ACTIVE' }).cursor();
+    const cursor = JobModel.find({ status: 'ACTIVE', isPublic: 'PUBLIC' }).cursor();
     let jobs = []
     for (let doc = await cursor.next(); doc != null; doc = await cursor.next()) {
       const {career} = doc._doc
