@@ -90,7 +90,7 @@ class CvController {
       .then(cv => {
         const cvId = cv._doc._id
         UserModel.findOneAndUpdate({ _id }, { listCV: listCV && listCV.length > 0 ? [...listCV, cvId] : [cvId], numberOfCreateCv: numberOfCreateCv - 1 })
-          .then(() => resSuccess(res, {cvInfo: cv}, 'CREATED_CV_SUCCESS'))
+          .then(() => resSuccess(res, {cvDetail: cv}, 'CREATED_CV_SUCCESS'))
           .catch(e => resError(res, e.message))
       })
       .catch(e => resError(res, e.message))
@@ -101,7 +101,7 @@ class CvController {
     await checkUserTypeRequest(req, res, next, ['USER'])
     const cvId = req.params.id
     CvModel.findByIdAndUpdate(cvId, req.body)
-      .then(cv => resSuccess(res, {cvInfo: cv}, 'UPDATED_CV_SUCCESS'))
+      .then(cv => resSuccess(res, {cvDetail: cv}, 'UPDATED_CV_SUCCESS'))
       .catch(e => resError(res, e.message))
   }
 

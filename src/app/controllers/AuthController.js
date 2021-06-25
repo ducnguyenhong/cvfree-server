@@ -103,16 +103,17 @@ class AuthController {
       return resError(res, 'USER_TYPE_INVALID', 409)
     }
 
-    let bonusData = {}
+    let bonusData = {
+      numberOfReportJob: 1,
+      status: 'ACTIVE'
+    }
     if (type === 'USER') {
-      bonusData = {numberOfCreateCv: 3}
+      bonusData.numberOfCreateCv = 3
     }
     if (type === 'EMPLOYER') {
-      bonusData = {
-        numberOfCandidateOpening: 3,
-        numberOfPosting: 3,
-        numberOfRequestUpdateCompany: 1
-      }
+      bonusData.numberOfCandidateOpening = 3
+      bonusData.numberOfPosting = 3
+      bonusData.numberOfRequestUpdateCompany = 1
     }
 
     const newUser = new UserModel({...req.body, ...bonusData})
