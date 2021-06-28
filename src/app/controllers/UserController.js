@@ -5,6 +5,7 @@ const getPagingData = require('../helper/get-paging-data')
 const checkUserTypeRequest = require('../helper/check-user-type-request')
 const getQueryParams = require('../helper/get-query-params')
 const checkExistsData = require('../helper/check-exists-data')
+const USER_TYPE = require('../../constants/user-type')
 class UserController {
 
   // [GET] /users
@@ -54,6 +55,31 @@ class UserController {
       .then(user => {
         const { password, __v, ...dataRes } = user._doc
         return resSuccess(res, {userDetail: dataRes})
+      })
+      .catch(e => resError(res, e.message))
+  }
+
+  // [PUT] /users
+  async create(req, res, next) {
+    await checkUserTypeRequest(req, res, next, ['ADMIN'])
+    const {username, email, type} = req.body
+
+    if (await checkExistsData(UserModel, 'username', username)) {
+      return resError(res, 'USERNAME_ALREADY_EXISTS', 409)
+    }
+    if (await checkExistsData(UserModel, 'email', email)) {
+      return resError(res, 'EMAIL_ALREADY_EXISTS', 409)
+    }
+    if (!USER_TYPE.includes(type)) {
+      return resError(res, 'USER_TYPE_INVALID', 409)
+    }
+
+    const newUser = new UserModel(req.body)
+    
+    newUser.save()
+      .then(user => {
+        const { password, __v, ...dataRes } = user._doc
+        return resSuccess(res, {userDetail: dataRes}, 'CREATED_USER_SUCCESS')
       })
       .catch(e => resError(res, e.message))
   }

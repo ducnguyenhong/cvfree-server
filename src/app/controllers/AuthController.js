@@ -124,7 +124,10 @@ class AuthController {
           from: 'cvfreecontact@gmail.com',
           to: email,
           subject: 'CVFREE - Xác thực tài khoản',
-          text: `Xin chào ${username}. Bạn vừa đăng ký một tài khoản mới tại CVFREE. Hãy nhấp vào liên kết sau để xác thực tài khoản của mình: ${verifyURL}
+          text: `Xin chào ${username}.
+Bạn vừa đăng ký một tài khoản mới tại CVFREE.
+Hãy nhấp vào liên kết sau để xác thực tài khoản của mình:
+${verifyURL}
 
 Trân trọng,
 CVFREE`

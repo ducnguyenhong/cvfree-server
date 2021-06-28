@@ -7,5 +7,6 @@ router.put('/change-password', authMDW, userController.changePassword);
 router.put('/:id', authMDW, userController.update);
 router.get('/:id', authMDW, userController.showDetail);
 router.get('/', authMDW, userController.showList);
+router.post('/', authMDW, userController.create);
 
 module.exports = router;

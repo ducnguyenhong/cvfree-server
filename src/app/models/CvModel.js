@@ -48,6 +48,20 @@ const Cv = new Schema({
         },
         label: String
       },
+      // address: {
+      //   value: {
+      //     district: {
+      //       value: String,
+      //       label: String
+      //     },
+      //     city: {
+      //       value: String,
+      //       label: String
+      //     },
+      //     street: String
+      //   },
+      //   label: String
+      // },
       email: {type: String},
       facebook: { type: String },
       hobby: { type: String },
