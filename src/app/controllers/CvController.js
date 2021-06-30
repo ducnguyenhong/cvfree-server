@@ -98,7 +98,7 @@ class CvController {
 
   // [PUT] /cvs/:id
   async update(req, res, next) {
-    await checkUserTypeRequest(req, res, next, ['USER'])
+    await checkUserTypeRequest(req, res, next, ['USER', 'ADMIN'])
     const cvId = req.params.id
     CvModel.findByIdAndUpdate(cvId, req.body)
       .then(cv => resSuccess(res, {cvDetail: cv}, 'UPDATED_CV_SUCCESS'))
@@ -107,7 +107,7 @@ class CvController {
 
   // [PUT] /cvs/:id/update-template
   async updateTemplate(req, res, next) {
-    await checkUserTypeRequest(req, res, next, ['USER'])
+    await checkUserTypeRequest(req, res, next, ['USER', 'ADMIN'])
     const cvId = req.params.id
     const {template} = req.body
     CvModel.findOneAndUpdate({_id: cvId}, {template}, {new: true})
@@ -117,7 +117,7 @@ class CvController {
 
   // [DELETE] /cvs/:id
   async delete(req, res, next) {
-    await checkUserTypeRequest(req, res, next, ['USER'])
+    await checkUserTypeRequest(req, res, next, ['USER', 'ADMIN'])
     const cvId = req.params.id
     const { numberOfCreateCv, _id } = req.userRequest
     

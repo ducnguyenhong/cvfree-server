@@ -65,13 +65,14 @@ class AuthController {
           if (authUser._doc.deviceId === deviceId) {
             accessToken = authUser._doc.token
           }
+          const {password, ...dataRes} = user._doc
           AuthModel.findOneAndUpdate({ userId: user._doc._id.toString() }, {
             token: accessToken,
             expiredAt: moment().add(7, 'days').valueOf()
           })
           .then(() => resSuccess(res,
             {
-              userInfo: user,
+              userInfo: dataRes,
               auth: {
                 token: accessToken,
                 expiredAt: moment().add(7, 'days').valueOf()

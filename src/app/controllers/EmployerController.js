@@ -290,7 +290,7 @@ CVFREE`
             from: 'cvfreecontact@gmail.com',
             to: email,
             subject: 'CVFREE - Thông báo ứng tuyển việc làm',
-            text: `Xin chào ${`${fullname || email}`.toUpperCase()}.
+            text: `Xin chào ${`${fullname ? fullname.toUpperCase() : email}`}.
 
 Nhà tuyển dụng đã từ chối hồ sơ của bạn về việc làm "${job._doc.name}" mà bạn đã ứng tuyển.
 Hãy thử tìm công việc phù hợp hơn tại CVFREE. (${Constants.clientURL}/jobs)
@@ -304,13 +304,13 @@ CVFREE`};
             from: 'cvfreecontact@gmail.com',
             to: email,
             subject: 'CVFREE - Thông báo ứng tuyển việc làm',
-            text: `Xin chào ${`${fullname || email}`.toUpperCase()}.
-  
-  Nhà tuyển dụng đã từ chối hồ sơ của bạn về việc làm "${job._doc.name}" mà bạn đã ứng tuyển.
-  Hãy thử tìm công việc phù hợp hơn tại CVFREE. (${Constants.clientURL}/jobs)
-  
-  Trân trọng,
-  CVFREE`
+            text: `Xin chào ${`${fullname ? fullname.toUpperCase() : email}`}.
+
+Nhà tuyển dụng đã từ chối hồ sơ của bạn về việc làm "${job._doc.name}" mà bạn đã ứng tuyển.
+Hãy thử tìm công việc phù hợp hơn tại CVFREE. (${Constants.clientURL}/jobs)
+
+Trân trọng,
+CVFREE`
           };
         }
 

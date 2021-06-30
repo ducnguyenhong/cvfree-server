@@ -31,8 +31,8 @@ class CompanyController {
     
     CompanyModel.findOne({_id: companyId})
       .then(company => {
-        if (!company) {
-          return resSuccess(res, { companyDetail: null } , 'NOT_EXISTS_COMPANY')
+        if (!company || company._doc.status === 'INACTIVE') {
+          resSuccess(res, {companyDetail: null}, 'NOT_EXISTS_COMPANY')
         }
 
         const { ...dataRes } = company._doc
@@ -162,7 +162,7 @@ class CompanyController {
     }
     CompanyModel.findOne({_id: companyId})
       .then(company => {
-        if (!company) {
+        if (!company || company._doc.status === 'INACTIVE') {
           resSuccess(res, {companyDetail: null}, 'NOT_EXISTS_COMPANY')
         }
 
