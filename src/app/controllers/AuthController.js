@@ -112,6 +112,7 @@ class AuthController {
       bonusData.numberOfCreateCv = 3
     }
     if (type === 'EMPLOYER') {
+      bonusData.isAdminOfCompany = false
       bonusData.numberOfCandidateOpening = 3
       bonusData.numberOfPosting = 3
       bonusData.numberOfRequestUpdateCompany = 1
