@@ -188,6 +188,67 @@ class CompanyController {
       .catch(e => resError(res, e.message))
   }
 
+  // [GET] /companies/:id/staffs
+  async showListStaff(req, res, next) {
+    await checkUserTypeRequest(req, res, next, ['EMPLOYER'])
+    const companyId = req.params.id
+
+    const queryStaffsId = async () => {
+      return CompanyModel.findOne({ _id: companyId })
+        .then(company => {
+          if (!company) {
+            resError(res, 'NOT_EXISTS_COMPANY')
+          }
+          return company._doc.listStaff
+        })
+        .catch(e => resError(res, e.message))
+    }
+
+    const queryStaff = async (listStaff) => {
+      let dataRes = []
+      for (let i = 0; i < listStaff.length; i++){
+        await UserModel.findOne({ _id: listStaff[i]._doc.id })
+          .then(user => {
+            dataRes.push(user)
+          })
+          .catch(e => resError(res, e.message))
+      }
+      return dataRes
+    }
+
+    const listStaff = await queryStaffsId()
+    const dataRes = await queryStaff(listStaff)
+    const { dataPaging, pagination } = getPagingData(req, dataRes)
+    return resSuccess(res, {items: dataPaging, pagination})
+  }
+
+  // [DELETE] /companies/:id/staffs
+  async banStaff(req, res, next) {
+    await checkUserTypeRequest(req, res, next, ['EMPLOYER'])
+    const companyId = req.params.id
+    const creatorId = req.userRequest._id.toString()
+    const deleteStaffId = req.body.staffId
+
+
+    CompanyModel.findOne({ _id: companyId })
+      .then(company => {
+    console.log('ducnh4', creatorId, company._doc.creatorId);
+
+        if (creatorId !== company._doc.creatorId) {
+          return resError(res, 'NOT_EXECUTION_PERMISSION')
+        }
+
+        const newListStaff = [...company._doc.listStaff].filter(item => item._doc.id !== deleteStaffId)
+        CompanyModel.findOneAndUpdate({ _id: companyId }, { listStaff: newListStaff })
+          .then(() => {
+            UserModel.findOneAndUpdate({ _id: deleteStaffId }, { companyId: "" })
+              .then(() => resSuccess(res, null, 'BANNED_STAFF_SUCCESS'))
+              .catch(e => resError(res, e.message)) 
+          })
+          .catch(e => resError(res, e.message)) 
+      })
+      .catch(e => resError(res, e.message)) 
+  }
 }
 
 module.exports = new CompanyController();
