@@ -8,11 +8,11 @@ const db = require('./database')
 const bodyParser = require('body-parser')
 const cors = require('cors')
 
-// connect MongoDB
-db.connect()
-
 // Middleware
 app.use(cors())
+
+// connect MongoDB
+db.connect()
 
 // path static
 app.use(express.static(path.join(__dirname, 'public')));
@@ -26,7 +26,6 @@ app.use(morgan('combined'));
 
 // Route
 route(app);
-
-app.listen(port, () => {
-  console.log(`CVFREE SERVER`, port);
+app.listen(process.env.PORT || port, () => {
+  console.log(`CVFREE SERVER`, process.env.PORT || port);
 });

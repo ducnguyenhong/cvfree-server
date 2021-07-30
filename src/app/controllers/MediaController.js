@@ -1,4 +1,4 @@
-const Constants = require('../../Constants')
+const Constants = require('../../constants')
 const resSuccess = require('../response/response-success')
 
 class MediaController {

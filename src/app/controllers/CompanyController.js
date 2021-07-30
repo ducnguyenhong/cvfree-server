@@ -232,8 +232,6 @@ class CompanyController {
 
     CompanyModel.findOne({ _id: companyId })
       .then(company => {
-    console.log('ducnh4', creatorId, company._doc.creatorId);
-
         if (creatorId !== company._doc.creatorId) {
           return resError(res, 'NOT_EXECUTION_PERMISSION')
         }

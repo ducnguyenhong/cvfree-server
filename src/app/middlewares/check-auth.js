@@ -25,7 +25,7 @@ const authMDW = async (req, res, next) => {
   const authUser = await AuthModel.findOne({ userId: user._doc._id.toString() });
 
   if (accessToken !== authUser._doc.token) {
-		return resError(res, 'Tài khoản của bạn đang đăng nhập tại nơi khác', 401)
+		return resError(res, 'ACCOUNT_LOGGED_IN_SOMEWHERE_ELSE', 401)
   }
 
   if (authUser._doc.expiredAt <= moment().valueOf()) {

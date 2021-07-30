@@ -7,4 +7,13 @@ const Constants = {
   accessTokenSecret: "CVFREE_Server_ducnh99"
 }
 
+// const Constants = {
+//   serverPort: 1234,
+//   serverURL: 'https://guarded-retreat-57965.herokuapp.com',
+//   clientURL: 'https://cvfree.top',
+//   apiVersion: 'v1',
+//   accessTokenLife: 604800000, // 1 week
+//   accessTokenSecret: "CVFREE_Server_ducnh99"
+// }
+
 module.exports = Constants
