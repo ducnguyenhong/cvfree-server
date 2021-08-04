@@ -20,7 +20,7 @@ const apiVersion = require('../constants/index').apiVersion
 const route = (app) => {
   app.use(`/${apiVersion}/users`, userRouter)
   app.use(`/${apiVersion}/send-email`, sendEmailRouter)
-  app.use(`/${apiVersion}/feedbacks`, feedbackRouter)
+  app.use(`/${apiVersion}/feedback`, feedbackRouter)
   app.use(`/${apiVersion}/report-job`, reportJobRouter)
   app.use(`/${apiVersion}/employer`, employerRouter)
   app.use(`/${apiVersion}/request-update-company`, requestUpdateCompanyRouter)

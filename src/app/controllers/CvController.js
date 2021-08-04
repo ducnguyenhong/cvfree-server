@@ -5,6 +5,7 @@ const resSuccess = require('../response/response-success')
 const resError = require('../response/response-error')
 const getPagingData = require('../helper/get-paging-data')
 const checkUserTypeRequest = require('../helper/check-user-type-request')
+const getUserRequest = require('../helper/get-user-request')
 class CvController {
 
   // [GET] /cvs
@@ -66,10 +67,21 @@ class CvController {
 
   // [GET] /cvs/:id
   async showDetail(req, res) {
+    const bearerToken = req.headers.authorization;
     const cvId = req.params.id
+    let user = null
+    if (bearerToken) {
+      user = await getUserRequest(bearerToken)
+    }
     CvModel.findOne({_id: cvId})
       .then(cv => {
         const { __v, ...dataRes } = cv._doc
+        if (cv._doc.isPublic === 'PRIVATE' && user._doc.type !== 'ADMIN') {
+          if (user && user._doc._id.toString() === cv._doc.creatorId) {
+            return resSuccess(res, {cvDetail: dataRes})
+          }
+          return resError(res, 'PRIVATE_CV')
+        }
         return resSuccess(res, {cvDetail: dataRes})
       })
       .catch(e => resError(res, e.message))

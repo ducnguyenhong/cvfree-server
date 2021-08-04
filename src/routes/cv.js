@@ -5,7 +5,7 @@ const authMDW = require('../app/middlewares/check-auth')
 
 router.get('/my-cvs/suggest', authMDW, cvController.showMyCvsSuggest);
 router.get('/my-cvs/:id', authMDW, cvController.showMyCvs);
-router.get('/:id', authMDW, cvController.showDetail);
+router.get('/:id', cvController.showDetail);
 router.get('/', authMDW, cvController.showList);
 router.post('/', authMDW, cvController.create);
 router.put('/:id/update-template', authMDW, cvController.updateTemplate);
